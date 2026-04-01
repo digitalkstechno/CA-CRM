@@ -18,8 +18,7 @@ export default function LoginPage() {
     e.preventDefault();
     setError('');
     setLoading(true);
-    await new Promise(r => setTimeout(r, 600));
-    const ok = login(form.username.trim(), form.password);
+    const ok = await login(form.username.trim(), form.password);
     if (ok) {
       router.replace('/');
     } else {

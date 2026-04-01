@@ -1,26 +1,27 @@
 'use client';
 
-import React, { createContext, useContext, useEffect, useState } from 'react';
+import React, { createContext, useContext, useEffect, useState, useCallback } from 'react';
+import { api } from './api';
 
 export const DOCUMENT_CATEGORIES = ['PAN Card', 'Aadhaar Card', 'GST Certificate', 'Udyam Certificate', 'ITR', 'Other'] as const;
 export type DocumentCategory = typeof DOCUMENT_CATEGORIES[number];
 
 export const ITR_YEARS = ['2024-25', '2023-24', '2022-23', '2021-22'] as const;
-export type ItrYear = typeof ITR_YEARS[number];
+export type ItrYear = string; // Now dynamic - fetched from backend
 
 export type Document = {
-  id: string;
+  _id: string;
   name: string;
   type: string;
   size: string;
   uploadedAt: string;
   category: DocumentCategory;
-  itrYear?: ItrYear; // only when category === 'ITR'
+  itrYear?: ItrYear;
+  filePath?: string;
 };
 
 export type FamilyMember = {
-  id: string;
-  clientId: string;
+  _id: string;
   name: string;
   relation: string;
   phone: string;
@@ -29,12 +30,12 @@ export type FamilyMember = {
 };
 
 export type Client = {
-  id: string;
+  _id: string;
   name: string;
   email: string;
   phone: string;
-  paymentStatus: 'CLEAR' | 'PENDING'; // controls WhatsApp chatbot access
-  serviceEnabled: boolean;             // admin ON/OFF toggle
+  paymentStatus: 'CLEAR' | 'PENDING';
+  serviceEnabled: boolean;
   createdAt: string;
   documents: Document[];
   familyMembers: FamilyMember[];
@@ -42,130 +43,192 @@ export type Client = {
 
 type Store = {
   clients: Client[];
-  addClient: (c: Omit<Client, 'id' | 'createdAt' | 'documents' | 'familyMembers'>) => void;
-  updateClient: (id: string, data: Partial<Client>) => void;
-  deleteClient: (id: string) => void;
-  addFamilyMember: (clientId: string, m: Omit<FamilyMember, 'id' | 'clientId' | 'documents'>) => void;
-  deleteFamilyMember: (clientId: string, memberId: string) => void;
-  addDocument: (clientId: string, doc: Omit<Document, 'id' | 'uploadedAt'>, memberId?: string) => void;
-  deleteDocument: (clientId: string, docId: string, memberId?: string) => void;
+  loading: boolean;
+  error: string | null;
+  fetchClients: () => Promise<void>;
+  addClient: (c: Omit<Client, '_id' | 'createdAt' | 'documents' | 'familyMembers'>) => Promise<void>;
+  updateClient: (id: string, data: Partial<Client>) => Promise<void>;
+  deleteClient: (id: string) => Promise<void>;
+  addFamilyMember: (clientId: string, m: Omit<FamilyMember, '_id' | 'documents'>) => Promise<void>;
+  deleteFamilyMember: (clientId: string, memberId: string) => Promise<void>;
+  addDocument: (clientId: string, doc: Omit<Document, '_id' | 'uploadedAt'>, memberId?: string) => Promise<void>;
+  uploadDocument: (clientId: string, file: File, data: { name: string; category: DocumentCategory; itrYear?: ItrYear }, memberId?: string) => Promise<void>;
+  updateDocument: (clientId: string, docId: string, data: { name?: string; category?: DocumentCategory; itrYear?: ItrYear; type?: string; size?: string }, memberId?: string) => Promise<void>;
+  updateDocumentWithFile: (clientId: string, docId: string, file: File, data: { name?: string; category?: DocumentCategory; itrYear?: ItrYear; type?: string; size?: string }, memberId?: string) => Promise<void>;
+  deleteDocument: (clientId: string, docId: string, memberId?: string) => Promise<void>;
   findByPhone: (phone: string) => Client | undefined;
 };
 
 const StoreContext = createContext<Store | null>(null);
 
-const SEED: Client[] = [
-  {
-    id: '1',
-    name: 'Prince Sojitra',
-    email: 'prince@example.com',
-    phone: '+91 98765 43210',
-    paymentStatus: 'CLEAR',
-    serviceEnabled: true,
-    createdAt: '2024-01-15',
-    documents: [
-      { id: 'd1', name: 'Aadhar_Card.pdf', type: 'PDF', size: '1.2 MB', uploadedAt: '2024-03-01', category: 'Aadhaar Card' },
-      { id: 'd2', name: 'PAN_Card.pdf', type: 'PDF', size: '0.8 MB', uploadedAt: '2024-03-05', category: 'PAN Card' },
-      { id: 'd3', name: 'ITR_2024-25.pdf', type: 'PDF', size: '2.1 MB', uploadedAt: '2024-04-01', category: 'ITR', itrYear: '2024-25' },
-      { id: 'd4', name: 'ITR_2023-24.pdf', type: 'PDF', size: '1.9 MB', uploadedAt: '2024-04-01', category: 'ITR', itrYear: '2023-24' },
-    ],
-    familyMembers: [
-      {
-        id: 'fm1',
-        clientId: '1',
-        name: 'Ravi Sojitra',
-        relation: 'Father',
-        phone: '+91 98765 11111',
-        email: 'ravi@example.com',
-        documents: [
-          { id: 'fd1', name: 'Ravi_Aadhar.pdf', type: 'PDF', size: '1.1 MB', uploadedAt: '2024-03-10', category: 'Aadhaar Card' },
-        ],
-      },
-    ],
-  },
-  {
-    id: '2',
-    name: 'Anjali Mehta',
-    email: 'anjali@example.com',
-    phone: '+91 91234 56789',
-    paymentStatus: 'PENDING',
-    serviceEnabled: true,
-    createdAt: '2024-02-10',
-    documents: [],
-    familyMembers: [],
-  },
-];
-
-function uid() {
-  return Math.random().toString(36).slice(2, 10);
-}
-
 export function StoreProvider({ children }: { children: React.ReactNode }) {
   const [clients, setClients] = useState<Client[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
-    const saved = localStorage.getItem('vault_clients');
-    setClients(saved ? JSON.parse(saved) : SEED);
+  const fetchClients = useCallback(async () => {
+    try {
+      setLoading(true);
+      setError(null);
+      const data = await api.get('/clients?limit=9999');
+      setClients(data.clients || data);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to fetch clients');
+    } finally {
+      setLoading(false);
+    }
   }, []);
 
   useEffect(() => {
-    if (clients.length > 0) localStorage.setItem('vault_clients', JSON.stringify(clients));
-  }, [clients]);
+    fetchClients();
+  }, [fetchClients]);
 
-  const addClient: Store['addClient'] = (c) => {
-    setClients(prev => [...prev, { ...c, id: uid(), createdAt: new Date().toISOString().slice(0, 10), documents: [], familyMembers: [] }]);
+  const addClient = async (c: Omit<Client, '_id' | 'createdAt' | 'documents' | 'familyMembers'>) => {
+    try {
+      const newClient = await api.post('/clients', c);
+      setClients(prev => [newClient, ...prev]);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to add client');
+      throw err;
+    }
   };
 
-  const updateClient: Store['updateClient'] = (id, data) => {
-    setClients(prev => prev.map(c => c.id === id ? { ...c, ...data } : c));
+  const updateClient = async (id: string, data: Partial<Client>) => {
+    try {
+      const updated = await api.put(`/clients/${id}`, data);
+      setClients(prev => prev.map(c => c._id === id ? updated : c));
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to update client');
+      throw err;
+    }
   };
 
-  const deleteClient: Store['deleteClient'] = (id) => {
-    setClients(prev => prev.filter(c => c.id !== id));
+  const deleteClient = async (id: string) => {
+    try {
+      await api.delete(`/clients/${id}`);
+      setClients(prev => prev.filter(c => c._id !== id));
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to delete client');
+      throw err;
+    }
   };
 
-  const addFamilyMember: Store['addFamilyMember'] = (clientId, m) => {
-    setClients(prev => prev.map(c => c.id === clientId
-      ? { ...c, familyMembers: [...c.familyMembers, { ...m, id: uid(), clientId, documents: [] }] }
-      : c
-    ));
+  const addFamilyMember = async (clientId: string, m: Omit<FamilyMember, '_id' | 'documents'>) => {
+    try {
+      const updated = await api.post(`/clients/${clientId}/family`, m);
+      setClients(prev => prev.map(c => c._id === clientId ? updated : c));
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to add family member');
+      throw err;
+    }
   };
 
-  const deleteFamilyMember: Store['deleteFamilyMember'] = (clientId, memberId) => {
-    setClients(prev => prev.map(c => c.id === clientId
-      ? { ...c, familyMembers: c.familyMembers.filter(m => m.id !== memberId) }
-      : c
-    ));
+  const deleteFamilyMember = async (clientId: string, memberId: string) => {
+    try {
+      const updated = await api.delete(`/clients/${clientId}/family/${memberId}`);
+      setClients(prev => prev.map(c => c._id === clientId ? updated : c));
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to delete family member');
+      throw err;
+    }
   };
 
-  const addDocument: Store['addDocument'] = (clientId, doc, memberId) => {
-    const newDoc: Document = { ...doc, id: uid(), uploadedAt: new Date().toISOString().slice(0, 10) };
-    setClients(prev => prev.map(c => {
-      if (c.id !== clientId) return c;
-      if (memberId) {
-        return { ...c, familyMembers: c.familyMembers.map(m => m.id === memberId ? { ...m, documents: [...m.documents, newDoc] } : m) };
-      }
-      return { ...c, documents: [...c.documents, newDoc] };
-    }));
+  const addDocument = async (clientId: string, doc: Omit<Document, '_id' | 'uploadedAt'>, memberId?: string) => {
+    try {
+      const body = memberId ? { ...doc, memberId } : doc;
+      const updated = await api.post(`/clients/${clientId}/documents`, body);
+      setClients(prev => prev.map(c => c._id === clientId ? updated : c));
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to add document');
+      throw err;
+    }
   };
 
-  const deleteDocument: Store['deleteDocument'] = (clientId, docId, memberId) => {
-    setClients(prev => prev.map(c => {
-      if (c.id !== clientId) return c;
-      if (memberId) {
-        return { ...c, familyMembers: c.familyMembers.map(m => m.id === memberId ? { ...m, documents: m.documents.filter(d => d.id !== docId) } : m) };
-      }
-      return { ...c, documents: c.documents.filter(d => d.id !== docId) };
-    }));
+  const uploadDocument = async (clientId: string, file: File, data: { name: string; category: DocumentCategory; itrYear?: ItrYear }, memberId?: string) => {
+    try {
+      const formData = new FormData();
+      formData.append('file', file);
+      formData.append('name', data.name);
+      formData.append('category', data.category);
+      if (data.itrYear) formData.append('itrYear', data.itrYear);
+      if (memberId) formData.append('memberId', memberId);
+      
+      const updated = await api.post(`/clients/${clientId}/documents/upload`, formData, true);
+      setClients(prev => prev.map(c => c._id === clientId ? updated : c));
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to upload document');
+      throw err;
+    }
   };
 
-  const findByPhone: Store['findByPhone'] = (phone) => {
+  const updateDocument = async (clientId: string, docId: string, data: { name?: string; category?: DocumentCategory; itrYear?: ItrYear }, memberId?: string) => {
+    try {
+      const endpoint = memberId 
+        ? `/clients/${clientId}/documents/${docId}/${memberId}` 
+        : `/clients/${clientId}/documents/${docId}`;
+      const updated = await api.put(endpoint, data);
+      setClients(prev => prev.map(c => c._id === clientId ? updated : c));
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to update document');
+      throw err;
+    }
+  };
+
+  const updateDocumentWithFile = async (clientId: string, docId: string, file: File, data: { name?: string; category?: DocumentCategory; itrYear?: ItrYear; type?: string; size?: string }, memberId?: string) => {
+    try {
+      const formData = new FormData();
+      formData.append('file', file);
+      if (data.name) formData.append('name', data.name);
+      if (data.category) formData.append('category', data.category);
+      if (data.itrYear) formData.append('itrYear', data.itrYear);
+      
+      const endpoint = memberId 
+        ? `/clients/${clientId}/documents/${docId}/${memberId}` 
+        : `/clients/${clientId}/documents/${docId}`;
+      const updated = await api.put(endpoint, formData, true);
+      setClients(prev => prev.map(c => c._id === clientId ? updated : c));
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to update document');
+      throw err;
+    }
+  };
+
+  const deleteDocument = async (clientId: string, docId: string, memberId?: string) => {
+    try {
+      const endpoint = memberId 
+        ? `/clients/${clientId}/documents/${docId}/${memberId}` 
+        : `/clients/${clientId}/documents/${docId}`;
+      const updated = await api.delete(endpoint);
+      setClients(prev => prev.map(c => c._id === clientId ? updated : c));
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to delete document');
+      throw err;
+    }
+  };
+
+  const findByPhone = (phone: string) => {
     const normalized = phone.replace(/\s+/g, '');
     return clients.find(c => c.phone.replace(/\s+/g, '') === normalized);
   };
 
   return (
-    <StoreContext.Provider value={{ clients, addClient, updateClient, deleteClient, addFamilyMember, deleteFamilyMember, addDocument, deleteDocument, findByPhone }}>
+    <StoreContext.Provider value={{ 
+      clients, 
+      loading, 
+      error, 
+      fetchClients,
+      addClient, 
+      updateClient, 
+      deleteClient, 
+      addFamilyMember, 
+      deleteFamilyMember, 
+      addDocument, 
+      uploadDocument,
+      updateDocument,
+      updateDocumentWithFile,
+      deleteDocument, 
+      findByPhone 
+    }}>
       {children}
     </StoreContext.Provider>
   );

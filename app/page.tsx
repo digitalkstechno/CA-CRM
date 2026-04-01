@@ -42,12 +42,12 @@ export default function DashboardPage() {
               const totalDocs = client.documents.length + client.familyMembers.reduce((a, m) => a + m.documents.length, 0);
               return (
                 <motion.div
-                  key={client.id}
+                  key={client._id}
                   initial={{ opacity: 0, x: -10 }}
                   animate={{ opacity: 1, x: 0 }}
                   transition={{ delay: i * 0.08 }}
                 >
-                  <Link href={`/clients/${client.id}`} className="flex items-center gap-4 p-4 rounded-2xl hover:bg-gray-50 transition-colors group">
+                  <Link href={`/clients/${client._id}`} className="flex items-center gap-4 p-4 rounded-2xl hover:bg-gray-50 transition-colors group">
                     <div className="w-12 h-12 rounded-2xl bg-blue-50 flex items-center justify-center text-blue-600 font-bold text-lg">
                       {client.name.charAt(0)}
                     </div>
@@ -91,7 +91,7 @@ export default function DashboardPage() {
             ) : (
               <div className="space-y-3">
                 {clearClients.slice(0, 4).map(c => (
-                  <Link key={c.id} href={`/clients/${c.id}`} className="flex items-center gap-3 hover:bg-gray-50 rounded-xl p-2 transition-colors">
+                  <Link key={c._id} href={`/clients/${c._id}`} className="flex items-center gap-3 hover:bg-gray-50 rounded-xl p-2 transition-colors">
                     <div className="w-8 h-8 rounded-xl bg-blue-50 flex items-center justify-center text-blue-600 font-bold text-sm">
                       {c.name.charAt(0)}
                     </div>

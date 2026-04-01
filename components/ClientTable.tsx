@@ -1,9 +1,10 @@
 'use client';
 
-import React, { useState, useEffect, useCallback } from 'react';
-import { Plus, Trash2, Eye, ToggleLeft, ToggleRight, Search, X, Pencil, Copy, Check } from 'lucide-react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
+import { Plus, Trash2, Eye, ToggleLeft, ToggleRight, Search, X, Pencil, Copy, Check, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight } from 'lucide-react';
 import Link from 'next/link';
-import { useStore, Client } from '@/lib/store';
+import { Client } from '@/lib/store';
+import { api } from '@/lib/api';
 import { useToast } from './Toast';
 
 function useEscClose(onClose: () => void) {
@@ -32,18 +33,26 @@ function CopyPhone({ phone }: { phone: string }) {
   );
 }
 
-function AddClientModal({ onClose }: { onClose: () => void }) {
-  const { addClient } = useStore();
+function AddClientModal({ onClose, onSuccess }: { onClose: () => void; onSuccess: () => void }) {
   const { toast } = useToast();
   const [form, setForm] = useState({ name: '', email: '', phone: '', paymentStatus: 'CLEAR' as Client['paymentStatus'], serviceEnabled: true });
+  const [loading, setLoading] = useState(false);
   useEscClose(onClose);
 
-  const submit = (e: React.FormEvent) => {
+  const submit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!form.name.trim() || !form.phone.trim()) return;
-    addClient(form);
-    toast('Client added successfully');
-    onClose();
+    setLoading(true);
+    try {
+      await api.post('/clients', form);
+      toast('Client added successfully');
+      onSuccess();
+      onClose();
+    } catch (err) {
+      toast('Failed to add client', 'error');
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -88,8 +97,10 @@ function AddClientModal({ onClose }: { onClose: () => void }) {
             </div>
           </div>
           <div className="flex gap-3 pt-2">
-            <button type="button" onClick={onClose} className="flex-1 py-3 rounded-xl border border-gray-200 text-sm font-bold text-gray-600 hover:bg-gray-50 transition-colors">Cancel</button>
-            <button type="submit" className="flex-1 py-3 rounded-xl bg-blue-600 text-white text-sm font-bold hover:bg-blue-700 transition-colors">Add Client</button>
+            <button type="button" onClick={onClose} disabled={loading} className="flex-1 py-3 rounded-xl border border-gray-200 text-sm font-bold text-gray-600 hover:bg-gray-50 transition-colors disabled:opacity-50">Cancel</button>
+            <button type="submit" disabled={loading} className="flex-1 py-3 rounded-xl bg-blue-600 text-white text-sm font-bold hover:bg-blue-700 transition-colors disabled:opacity-50">
+              {loading ? 'Adding...' : 'Add Client'}
+            </button>
           </div>
         </form>
       </div>
@@ -97,18 +108,26 @@ function AddClientModal({ onClose }: { onClose: () => void }) {
   );
 }
 
-function EditClientModal({ client, onClose }: { client: Client; onClose: () => void }) {
-  const { updateClient } = useStore();
+function EditClientModal({ client, onClose, onSuccess }: { client: Client; onClose: () => void; onSuccess: () => void }) {
   const { toast } = useToast();
   const [form, setForm] = useState({ name: client.name, email: client.email, phone: client.phone, paymentStatus: client.paymentStatus, serviceEnabled: client.serviceEnabled });
+  const [loading, setLoading] = useState(false);
   useEscClose(onClose);
 
-  const submit = (e: React.FormEvent) => {
+  const submit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!form.name.trim() || !form.phone.trim()) return;
-    updateClient(client.id, form);
-    toast('Client updated successfully');
-    onClose();
+    setLoading(true);
+    try {
+      await api.put(`/clients/${client._id}`, form);
+      toast('Client updated successfully');
+      onSuccess();
+      onClose();
+    } catch (err) {
+      toast('Failed to update client', 'error');
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -153,8 +172,10 @@ function EditClientModal({ client, onClose }: { client: Client; onClose: () => v
             </div>
           </div>
           <div className="flex gap-3 pt-2">
-            <button type="button" onClick={onClose} className="flex-1 py-3 rounded-xl border border-gray-200 text-sm font-bold text-gray-600 hover:bg-gray-50 transition-colors">Cancel</button>
-            <button type="submit" className="flex-1 py-3 rounded-xl bg-blue-600 text-white text-sm font-bold hover:bg-blue-700 transition-colors">Save Changes</button>
+            <button type="button" onClick={onClose} disabled={loading} className="flex-1 py-3 rounded-xl border border-gray-200 text-sm font-bold text-gray-600 hover:bg-gray-50 transition-colors disabled:opacity-50">Cancel</button>
+            <button type="submit" disabled={loading} className="flex-1 py-3 rounded-xl bg-blue-600 text-white text-sm font-bold hover:bg-blue-700 transition-colors disabled:opacity-50">
+              {loading ? 'Saving...' : 'Save Changes'}
+            </button>
           </div>
         </form>
       </div>
@@ -181,49 +202,130 @@ function ConfirmModal({ message, onConfirm, onCancel }: { message: string; onCon
   );
 }
 
+function getPageNumbers(currentPage: number, totalPages: number): (number | '...')[] {
+  if (totalPages <= 7) return Array.from({ length: totalPages }, (_, i) => i + 1);
+  
+  const pages: (number | '...')[] = [1];
+  
+  if (currentPage > 3) pages.push('...');
+  
+  const start = Math.max(2, currentPage - 1);
+  const end = Math.min(totalPages - 1, currentPage + 1);
+  
+  for (let i = start; i <= end; i++) pages.push(i);
+  
+  if (currentPage < totalPages - 2) pages.push('...');
+  
+  if (totalPages > 1) pages.push(totalPages);
+  
+  return pages;
+}
+
 export function ClientTable() {
-  const { clients, deleteClient, updateClient } = useStore();
   const { toast } = useToast();
+  const [clients, setClients] = useState<Client[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [totalItems, setTotalItems] = useState(0);
+  const [totalPages, setTotalPages] = useState(1);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [limit] = useState(15);
+
   const [payFilter, setPayFilter] = useState<'ALL' | 'CLEAR' | 'PENDING'>('ALL');
   const [svcFilter, setSvcFilter] = useState<'ALL' | 'ON' | 'OFF'>('ALL');
   const [search, setSearch] = useState('');
+  const [debouncedSearch, setDebouncedSearch] = useState('');
   const [showAdd, setShowAdd] = useState(false);
   const [editClient, setEditClient] = useState<Client | null>(null);
   const [deleteId, setDeleteId] = useState<string | null>(null);
+  const [deleting, setDeleting] = useState<string | null>(null);
 
-  const filtered = clients.filter(c => {
-    const payOk = payFilter === 'ALL' || c.paymentStatus === payFilter;
-    const svcOk = svcFilter === 'ALL' || (svcFilter === 'ON' ? c.serviceEnabled : !c.serviceEnabled);
-    const q = search.trim().toLowerCase();
-    const searchOk = !q || c.name.toLowerCase().includes(q) || c.phone.includes(q) || (c.email && c.email.toLowerCase().includes(q));
-    return payOk && svcOk && searchOk;
-  });
+  // Debounce search input
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedSearch(search);
+      setCurrentPage(1); // Reset to page 1 on new search
+    }, 400);
+    return () => clearTimeout(timer);
+  }, [search]);
 
-  const handleTogglePayment = useCallback((client: Client) => {
+  // Reset to page 1 when filters change
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [payFilter, svcFilter]);
+
+  // Fetch clients from API with pagination params
+  const fetchClients = useCallback(async () => {
+    try {
+      setLoading(true);
+      const params = new URLSearchParams({
+        page: currentPage.toString(),
+        limit: limit.toString(),
+      });
+      if (debouncedSearch.trim()) params.set('search', debouncedSearch.trim());
+      if (payFilter !== 'ALL') params.set('paymentStatus', payFilter);
+      if (svcFilter !== 'ALL') params.set('serviceEnabled', svcFilter === 'ON' ? 'true' : 'false');
+
+      const data = await api.get(`/clients?${params.toString()}`);
+      setClients(data.clients);
+      setTotalItems(data.totalItems);
+      setTotalPages(data.totalPages);
+    } catch (err) {
+      toast('Failed to fetch clients', 'error');
+    } finally {
+      setLoading(false);
+    }
+  }, [currentPage, limit, debouncedSearch, payFilter, svcFilter, toast]);
+
+  useEffect(() => {
+    fetchClients();
+  }, [fetchClients]);
+
+  const handleTogglePayment = useCallback(async (client: Client) => {
     const next = client.paymentStatus === 'CLEAR' ? 'PENDING' : 'CLEAR';
-    updateClient(client.id, { paymentStatus: next });
-    toast(`Payment set to ${next} for ${client.name}`);
-  }, [updateClient, toast]);
+    try {
+      await api.put(`/clients/${client._id}`, { paymentStatus: next });
+      toast(`Payment set to ${next} for ${client.name}`);
+      fetchClients();
+    } catch (err) {
+      toast('Failed to update payment status', 'error');
+    }
+  }, [fetchClients, toast]);
 
-  const handleToggleService = useCallback((client: Client) => {
+  const handleToggleService = useCallback(async (client: Client) => {
     const next = !client.serviceEnabled;
-    updateClient(client.id, { serviceEnabled: next });
-    toast(`Service ${next ? 'enabled' : 'disabled'} for ${client.name}`);
-  }, [updateClient, toast]);
+    try {
+      await api.put(`/clients/${client._id}`, { serviceEnabled: next });
+      toast(`Service ${next ? 'enabled' : 'disabled'} for ${client.name}`);
+      fetchClients();
+    } catch (err) {
+      toast('Failed to update service status', 'error');
+    }
+  }, [fetchClients, toast]);
+
+  const startItem = totalItems === 0 ? 0 : (currentPage - 1) * limit + 1;
+  const endItem = Math.min(currentPage * limit, totalItems);
 
   return (
     <>
-      {showAdd && <AddClientModal onClose={() => setShowAdd(false)} />}
-      {editClient && <EditClientModal client={editClient} onClose={() => setEditClient(null)} />}
+      {showAdd && <AddClientModal onClose={() => setShowAdd(false)} onSuccess={fetchClients} />}
+      {editClient && <EditClientModal client={editClient} onClose={() => setEditClient(null)} onSuccess={fetchClients} />}
       {deleteId && (
         <ConfirmModal
           message="This will permanently delete the client and all their data."
           onCancel={() => setDeleteId(null)}
-          onConfirm={() => {
-            const name = clients.find(c => c.id === deleteId)?.name;
-            deleteClient(deleteId);
-            setDeleteId(null);
-            toast(`${name} deleted`, 'error');
+          onConfirm={async () => {
+            const name = clients.find(c => c._id === deleteId)?.name;
+            setDeleting(deleteId);
+            try {
+              await api.delete(`/clients/${deleteId}`);
+              setDeleteId(null);
+              toast(`${name} deleted`, 'error');
+              fetchClients();
+            } catch (err) {
+              toast('Failed to delete client', 'error');
+            } finally {
+              setDeleting(null);
+            }
           }}
         />
       )}
@@ -289,18 +391,31 @@ export function ClientTable() {
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-50">
-              {filtered.length === 0 && (
+              {loading && (
                 <tr>
                   <td colSpan={8} className="px-8 py-16 text-center">
-                    <p className="text-gray-400 text-sm">{search ? `No clients found for "${search}"` : 'No clients found.'}</p>
-                    {!search && <button onClick={() => setShowAdd(true)} className="mt-3 text-blue-600 font-bold text-sm hover:underline">+ Add your first client</button>}
+                    <div className="flex items-center justify-center gap-3">
+                      <svg className="animate-spin h-5 w-5 text-blue-600" fill="none" viewBox="0 0 24 24">
+                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z" />
+                      </svg>
+                      <span className="text-blue-600 text-sm font-medium">Loading clients...</span>
+                    </div>
                   </td>
                 </tr>
               )}
-              {filtered.map((client) => {
+              {!loading && clients.length === 0 && (
+                <tr>
+                  <td colSpan={8} className="px-8 py-16 text-center">
+                    <p className="text-gray-400 text-sm">{debouncedSearch ? `No clients found for "${debouncedSearch}"` : 'No clients found.'}</p>
+                    {!debouncedSearch && <button onClick={() => setShowAdd(true)} className="mt-3 text-blue-600 font-bold text-sm hover:underline">+ Add your first client</button>}
+                  </td>
+                </tr>
+              )}
+              {!loading && clients.map((client) => {
                 const totalDocs = client.documents.length + client.familyMembers.reduce((a, m) => a + m.documents.length, 0);
                 return (
-                  <tr key={client.id} className="group hover:bg-gray-50/50 transition-colors">
+                  <tr key={client._id} className="group hover:bg-gray-50/50 transition-colors">
                     <td className="px-8 py-5">
                       <div className="flex items-center gap-4">
                         <div className="w-11 h-11 rounded-2xl bg-blue-50 flex items-center justify-center text-blue-600 font-bold text-lg shrink-0">
@@ -335,14 +450,21 @@ export function ClientTable() {
                     <td className="px-8 py-5 text-xs text-gray-400 font-medium">{client.createdAt}</td>
                     <td className="px-8 py-5 text-right">
                       <div className="flex items-center justify-end gap-1">
-                        <Link href={`/clients/${client.id}`} className="p-2 text-gray-400 hover:text-blue-600 transition-colors rounded-lg hover:bg-blue-50" title="View">
+                        <Link href={`/clients/${client._id}`} className="p-2 text-gray-400 hover:text-blue-600 transition-colors rounded-lg hover:bg-blue-50" title="View">
                           <Eye size={17} />
                         </Link>
                         <button onClick={() => setEditClient(client)} className="p-2 text-gray-400 hover:text-indigo-500 transition-colors rounded-lg hover:bg-indigo-50" title="Edit">
                           <Pencil size={15} />
                         </button>
-                        <button onClick={() => setDeleteId(client.id)} className="p-2 text-gray-400 hover:text-red-500 transition-colors rounded-lg hover:bg-red-50" title="Delete">
-                          <Trash2 size={17} />
+                        <button onClick={() => setDeleteId(client._id)} disabled={deleting === client._id} className="p-2 text-gray-400 hover:text-red-500 transition-colors rounded-lg hover:bg-red-50 disabled:opacity-50" title="Delete">
+                          {deleting === client._id ? (
+                            <svg className="animate-spin h-4 w-4" fill="none" viewBox="0 0 24 24">
+                              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z" />
+                            </svg>
+                          ) : (
+                            <Trash2 size={17} />
+                          )}
                         </button>
                       </div>
                     </td>
@@ -353,10 +475,82 @@ export function ClientTable() {
           </table>
         </div>
 
+        {/* Pagination Footer */}
         <div className="p-6 border-t border-gray-50 flex items-center justify-between">
           <p className="text-xs text-gray-400 font-medium">
-            Showing <span className="text-gray-900 font-bold">{filtered.length}</span> of <span className="text-gray-900 font-bold">{clients.length}</span> clients
+            {loading ? (
+              <span className="text-blue-600">Loading...</span>
+            ) : totalItems === 0 ? (
+              <span>No clients</span>
+            ) : (
+              <>
+                Showing <span className="text-gray-900 font-bold">{startItem}–{endItem}</span> of <span className="text-gray-900 font-bold">{totalItems}</span> clients
+              </>
+            )}
           </p>
+
+          {totalPages > 1 && (
+            <div className="flex items-center gap-1">
+              {/* First page */}
+              <button
+                onClick={() => setCurrentPage(1)}
+                disabled={currentPage === 1 || loading}
+                className="p-2 rounded-lg text-gray-400 hover:text-gray-900 hover:bg-gray-100 transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
+                title="First page"
+              >
+                <ChevronsLeft size={16} />
+              </button>
+              {/* Previous */}
+              <button
+                onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+                disabled={currentPage === 1 || loading}
+                className="p-2 rounded-lg text-gray-400 hover:text-gray-900 hover:bg-gray-100 transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
+                title="Previous page"
+              >
+                <ChevronLeft size={16} />
+              </button>
+
+              {/* Page numbers */}
+              {getPageNumbers(currentPage, totalPages).map((page, idx) =>
+                page === '...' ? (
+                  <span key={`dots-${idx}`} className="px-2 text-gray-300 text-sm select-none">…</span>
+                ) : (
+                  <button
+                    key={page}
+                    onClick={() => setCurrentPage(page)}
+                    disabled={loading}
+                    className={`min-w-[36px] h-9 rounded-lg text-sm font-bold transition-colors ${
+                      currentPage === page
+                        ? 'bg-blue-600 text-white shadow-md shadow-blue-100'
+                        : 'text-gray-500 hover:bg-gray-100 hover:text-gray-900'
+                    } disabled:cursor-not-allowed`}
+                  >
+                    {page}
+                  </button>
+                )
+              )}
+
+              {/* Next */}
+              <button
+                onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+                disabled={currentPage === totalPages || loading}
+                className="p-2 rounded-lg text-gray-400 hover:text-gray-900 hover:bg-gray-100 transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
+                title="Next page"
+              >
+                <ChevronRight size={16} />
+              </button>
+              {/* Last page */}
+              <button
+                onClick={() => setCurrentPage(totalPages)}
+                disabled={currentPage === totalPages || loading}
+                className="p-2 rounded-lg text-gray-400 hover:text-gray-900 hover:bg-gray-100 transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
+                title="Last page"
+              >
+                <ChevronsRight size={16} />
+              </button>
+            </div>
+          )}
+
           {(payFilter !== 'ALL' || svcFilter !== 'ALL' || search) && (
             <button onClick={() => { setPayFilter('ALL'); setSvcFilter('ALL'); setSearch(''); }}
               className="text-xs text-blue-600 font-bold hover:underline">

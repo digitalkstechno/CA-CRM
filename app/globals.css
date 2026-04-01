@@ -33,3 +33,13 @@ body {
 ::-webkit-scrollbar-thumb:hover {
   background: #D1D5DB;
 }
+
+button {
+  cursor: pointer;
+}
+
+.truncate {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}

@@ -51,9 +51,9 @@ export function TopNav() {
           {open && results.length > 0 && (
             <div className="absolute top-full mt-2 w-full bg-white rounded-2xl shadow-xl border border-gray-100 overflow-hidden z-50">
               {results.map(c => (
-                <Link
-                  key={c.id}
-                  href={`/clients/${c.id}`}
+                  <Link
+                    key={c._id}
+                    href={`/clients/${c._id}`}
                   onClick={() => { setQuery(''); setOpen(false); }}
                   className="flex items-center gap-3 px-4 py-3 hover:bg-gray-50 transition-colors"
                 >

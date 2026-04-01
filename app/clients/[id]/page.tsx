@@ -3,9 +3,15 @@
 import React, { useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { useStore, Document, FamilyMember, DOCUMENT_CATEGORIES, ITR_YEARS } from '@/lib/store';
+import { useToast } from '@/components/Toast';
 import { motion } from 'motion/react';
-import { ArrowLeft, Plus, Trash2, FileText, UserPlus, Upload, X, ChevronDown, ChevronUp, Pencil } from 'lucide-react';
+import { ArrowLeft, Plus, Trash2, FileText, UserPlus, Upload, X, ChevronDown, ChevronUp, Pencil, File, Eye, Edit3, Download, RefreshCw } from 'lucide-react';
 import Link from 'next/link';
+import { UploadDocModal } from '@/components/fileupload/UploadDocModal';
+import ViewDocumentModal from '@/components/fileupload/ViewDocumentModal';
+import AddMemberModal from '@/components/fileupload/AddMemberModal';
+import EditMemberModal from '@/components/fileupload/EditMemberModal';
+import DocumentList from '@/components/fileupload/DocumentList';
 
 function ConfirmModal({ message, onConfirm, onCancel }: { message: string; onConfirm: () => void; onCancel: () => void }) {
   return (
@@ -25,228 +31,12 @@ function ConfirmModal({ message, onConfirm, onCancel }: { message: string; onCon
   );
 }
 
-function UploadDocModal({ onClose, onSave }: { onClose: () => void; onSave: (doc: Omit<Document, 'id' | 'uploadedAt'>) => void }) {
-  const [form, setForm] = useState<{ name: string; type: string; size: string; category: Document['category']; itrYear?: Document['itrYear'] }>({
-    name: '', type: 'PDF', size: '', category: 'PAN Card',
-  });
-
-  const submit = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!form.name.trim()) return;
-    if (form.category === 'ITR' && !form.itrYear) return;
-    onSave({ ...form, size: form.size || 'N/A' });
-    onClose();
-  };
-
-  return (
-    <div className="fixed inset-0 bg-black/40 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-      <div className="bg-white rounded-3xl shadow-2xl w-full max-w-md p-8">
-        <div className="flex items-center justify-between mb-6">
-          <h3 className="text-xl font-bold text-gray-900">Upload Document</h3>
-          <button onClick={onClose}><X size={20} className="text-gray-400 hover:text-gray-900" /></button>
-        </div>
-        <form onSubmit={submit} className="space-y-4">
-          <div>
-            <label className="text-xs font-bold text-gray-500 uppercase tracking-wider">Document Name *</label>
-            <input value={form.name} onChange={e => setForm(p => ({ ...p, name: e.target.value }))}
-              className="mt-1 w-full border border-gray-200 rounded-xl px-4 py-3 text-sm outline-none focus:ring-2 focus:ring-blue-100" placeholder="e.g. Aadhar_Card.pdf" required />
-          </div>
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <label className="text-xs font-bold text-gray-500 uppercase tracking-wider">Type</label>
-              <select value={form.type} onChange={e => setForm(p => ({ ...p, type: e.target.value }))}
-                className="mt-1 w-full border border-gray-200 rounded-xl px-4 py-3 text-sm outline-none focus:ring-2 focus:ring-blue-100">
-                {['PDF', 'Image', 'Word', 'Excel', 'Other'].map(t => <option key={t}>{t}</option>)}
-              </select>
-            </div>
-            <div>
-              <label className="text-xs font-bold text-gray-500 uppercase tracking-wider">Category</label>
-              <select value={form.category} onChange={e => setForm(p => ({ ...p, category: e.target.value as Document['category'], itrYear: undefined }))}
-                className="mt-1 w-full border border-gray-200 rounded-xl px-4 py-3 text-sm outline-none focus:ring-2 focus:ring-blue-100">
-                {DOCUMENT_CATEGORIES.map(c => <option key={c}>{c}</option>)}
-              </select>
-            </div>
-          </div>
-          {form.category === 'ITR' && (
-            <div>
-              <label className="text-xs font-bold text-gray-500 uppercase tracking-wider">ITR Year *</label>
-              <select value={form.itrYear ?? ''} onChange={e => setForm(p => ({ ...p, itrYear: e.target.value as Document['itrYear'] }))}
-                className="mt-1 w-full border border-gray-200 rounded-xl px-4 py-3 text-sm outline-none focus:ring-2 focus:ring-blue-100" required>
-                <option value="">Select Year</option>
-                {ITR_YEARS.map(y => <option key={y} value={y}>ITR {y}</option>)}
-              </select>
-            </div>
-          )}
-          <div>
-            <label className="text-xs font-bold text-gray-500 uppercase tracking-wider">File Size</label>
-            <input value={form.size} onChange={e => setForm(p => ({ ...p, size: e.target.value }))}
-              className="mt-1 w-full border border-gray-200 rounded-xl px-4 py-3 text-sm outline-none focus:ring-2 focus:ring-blue-100" placeholder="e.g. 1.2 MB" />
-          </div>
-          <div className="flex gap-3 pt-2">
-            <button type="button" onClick={onClose} className="flex-1 py-3 rounded-xl border border-gray-200 text-sm font-bold text-gray-600 hover:bg-gray-50">Cancel</button>
-            <button type="submit" className="flex-1 py-3 rounded-xl bg-blue-600 text-white text-sm font-bold hover:bg-blue-700">Upload</button>
-          </div>
-        </form>
-      </div>
-    </div>
-  );
-}
-
-function AddMemberModal({ onClose, onSave }: { onClose: () => void; onSave: (m: Omit<FamilyMember, 'id' | 'clientId' | 'documents'>) => void }) {
-  const [form, setForm] = useState({ name: '', relation: 'Spouse', phone: '', email: '' });
-
-  const submit = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!form.name.trim() || !form.phone.trim()) return;
-    onSave(form);
-    onClose();
-  };
-
-  return (
-    <div className="fixed inset-0 bg-black/40 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-      <div className="bg-white rounded-3xl shadow-2xl w-full max-w-md p-8">
-        <div className="flex items-center justify-between mb-6">
-          <h3 className="text-xl font-bold text-gray-900">Add Family Member</h3>
-          <button onClick={onClose}><X size={20} className="text-gray-400 hover:text-gray-900" /></button>
-        </div>
-        <form onSubmit={submit} className="space-y-4">
-          <div>
-            <label className="text-xs font-bold text-gray-500 uppercase tracking-wider">Full Name *</label>
-            <input value={form.name} onChange={e => setForm(p => ({ ...p, name: e.target.value }))}
-              className="mt-1 w-full border border-gray-200 rounded-xl px-4 py-3 text-sm outline-none focus:ring-2 focus:ring-blue-100" placeholder="e.g. Ravi Sojitra" required />
-          </div>
-          <div>
-            <label className="text-xs font-bold text-gray-500 uppercase tracking-wider">Relation</label>
-            <select value={form.relation} onChange={e => setForm(p => ({ ...p, relation: e.target.value }))}
-              className="mt-1 w-full border border-gray-200 rounded-xl px-4 py-3 text-sm outline-none focus:ring-2 focus:ring-blue-100">
-              {['Spouse', 'Father', 'Mother', 'Son', 'Daughter', 'Brother', 'Sister', 'Other'].map(r => <option key={r}>{r}</option>)}
-            </select>
-          </div>
-          <div>
-            <label className="text-xs font-bold text-gray-500 uppercase tracking-wider">WhatsApp Phone *</label>
-            <input value={form.phone} onChange={e => setForm(p => ({ ...p, phone: e.target.value }))}
-              className="mt-1 w-full border border-gray-200 rounded-xl px-4 py-3 text-sm outline-none focus:ring-2 focus:ring-blue-100" placeholder="+91 98765 43210" required />
-          </div>
-          <div>
-            <label className="text-xs font-bold text-gray-500 uppercase tracking-wider">Email</label>
-            <input value={form.email} onChange={e => setForm(p => ({ ...p, email: e.target.value }))}
-              type="email" className="mt-1 w-full border border-gray-200 rounded-xl px-4 py-3 text-sm outline-none focus:ring-2 focus:ring-blue-100" placeholder="email@example.com" />
-          </div>
-          <div className="flex gap-3 pt-2">
-            <button type="button" onClick={onClose} className="flex-1 py-3 rounded-xl border border-gray-200 text-sm font-bold text-gray-600 hover:bg-gray-50">Cancel</button>
-            <button type="submit" className="flex-1 py-3 rounded-xl bg-blue-600 text-white text-sm font-bold hover:bg-blue-700">Add Member</button>
-          </div>
-        </form>
-      </div>
-    </div>
-  );
-}
-
-function EditMemberModal({ member, onClose, onSave }: {
-  member: FamilyMember;
-  onClose: () => void;
-  onSave: (data: Omit<FamilyMember, 'id' | 'clientId' | 'documents'>) => void;
-}) {
-  const [form, setForm] = useState({ name: member.name, relation: member.relation, phone: member.phone, email: member.email });
-
-  const submit = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!form.name.trim() || !form.phone.trim()) return;
-    onSave(form);
-    onClose();
-  };
-
-  return (
-    <div className="fixed inset-0 bg-black/40 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-      <div className="bg-white rounded-3xl shadow-2xl w-full max-w-md p-8">
-        <div className="flex items-center justify-between mb-6">
-          <h3 className="text-xl font-bold text-gray-900">Edit Family Member</h3>
-          <button onClick={onClose}><X size={20} className="text-gray-400 hover:text-gray-900" /></button>
-        </div>
-        <form onSubmit={submit} className="space-y-4">
-          <div>
-            <label className="text-xs font-bold text-gray-500 uppercase tracking-wider">Full Name *</label>
-            <input value={form.name} onChange={e => setForm(p => ({ ...p, name: e.target.value }))}
-              className="mt-1 w-full border border-gray-200 rounded-xl px-4 py-3 text-sm outline-none focus:ring-2 focus:ring-blue-100" required />
-          </div>
-          <div>
-            <label className="text-xs font-bold text-gray-500 uppercase tracking-wider">Relation</label>
-            <select value={form.relation} onChange={e => setForm(p => ({ ...p, relation: e.target.value }))}
-              className="mt-1 w-full border border-gray-200 rounded-xl px-4 py-3 text-sm outline-none focus:ring-2 focus:ring-blue-100">
-              {['Spouse', 'Father', 'Mother', 'Son', 'Daughter', 'Brother', 'Sister', 'Other'].map(r => <option key={r}>{r}</option>)}
-            </select>
-          </div>
-          <div>
-            <label className="text-xs font-bold text-gray-500 uppercase tracking-wider">WhatsApp Phone *</label>
-            <input value={form.phone} onChange={e => setForm(p => ({ ...p, phone: e.target.value }))}
-              className="mt-1 w-full border border-gray-200 rounded-xl px-4 py-3 text-sm outline-none focus:ring-2 focus:ring-blue-100" required />
-          </div>
-          <div>
-            <label className="text-xs font-bold text-gray-500 uppercase tracking-wider">Email</label>
-            <input value={form.email} onChange={e => setForm(p => ({ ...p, email: e.target.value }))}
-              type="email" className="mt-1 w-full border border-gray-200 rounded-xl px-4 py-3 text-sm outline-none focus:ring-2 focus:ring-blue-100" />
-          </div>
-          <div className="flex gap-3 pt-2">
-            <button type="button" onClick={onClose} className="flex-1 py-3 rounded-xl border border-gray-200 text-sm font-bold text-gray-600 hover:bg-gray-50">Cancel</button>
-            <button type="submit" className="flex-1 py-3 rounded-xl bg-blue-600 text-white text-sm font-bold hover:bg-blue-700">Save Changes</button>
-          </div>
-        </form>
-      </div>
-    </div>
-  );
-}
-
-function DocumentList({ docs, onDelete, onAdd }: { docs: Document[]; onDelete: (id: string) => void; onAdd: () => void }) {
-  const [confirmDocId, setConfirmDocId] = useState<string | null>(null);
-
-  return (
-    <div>
-      {confirmDocId && (
-        <ConfirmModal
-          message="This document will be permanently deleted."
-          onCancel={() => setConfirmDocId(null)}
-          onConfirm={() => { onDelete(confirmDocId); setConfirmDocId(null); }}
-        />
-      )}
-      <div className="flex items-center justify-between mb-4">
-        <p className="text-sm font-bold text-gray-500">{docs.length} document{docs.length !== 1 ? 's' : ''}</p>
-        <button onClick={onAdd} className="flex items-center gap-1.5 text-xs font-bold text-blue-600 hover:text-blue-700 bg-blue-50 px-3 py-2 rounded-xl transition-colors">
-          <Upload size={14} /> Upload
-        </button>
-      </div>
-      {docs.length === 0 ? (
-        <div className="text-center py-8 text-gray-400 text-sm border-2 border-dashed border-gray-100 rounded-2xl">
-          No documents yet. Click Upload to add.
-        </div>
-      ) : (
-        <div className="space-y-2">
-          {docs.map(doc => (
-            <div key={doc.id} className="flex items-center gap-3 p-3 rounded-xl bg-gray-50 hover:bg-gray-100 transition-colors group">
-              <div className="w-9 h-9 rounded-lg bg-blue-50 flex items-center justify-center text-blue-600">
-                <FileText size={16} />
-              </div>
-              <div className="flex-1 min-w-0">
-                <p className="text-sm font-bold text-gray-900 truncate">{doc.name}</p>
-                <p className="text-[10px] text-gray-400">
-                  {doc.category}{doc.itrYear ? ` · ${doc.itrYear}` : ''} · {doc.type} · {doc.size} · {doc.uploadedAt}
-                </p>
-              </div>
-              <button onClick={() => setConfirmDocId(doc.id)} className="opacity-0 group-hover:opacity-100 p-1.5 text-gray-400 hover:text-red-500 transition-all">
-                <Trash2 size={14} />
-              </button>
-            </div>
-          ))}
-        </div>
-      )}
-    </div>
-  );
-}
-
 export default function ClientDetailPage() {
   const { id } = useParams<{ id: string }>();
   const router = useRouter();
-  const { clients, updateClient, addFamilyMember, deleteFamilyMember, addDocument, deleteDocument } = useStore();
-  const client = clients.find(c => c.id === id);
+  const { clients, updateClient, addFamilyMember, deleteFamilyMember, addDocument, uploadDocument, updateDocument, updateDocumentWithFile, deleteDocument } = useStore();
+  const { toast } = useToast();
+  const client = clients.find(c => c._id === id);
 
   const totalDocs = client ? client.documents.length + client.familyMembers.reduce((a, m) => a + m.documents.length, 0) : 0;
   const [tab, setTab] = useState<'documents' | 'family'>('documents');
@@ -256,6 +46,9 @@ export default function ClientDetailPage() {
   const [expandedMember, setExpandedMember] = useState<string | null>(null);
   const [editMember, setEditMember] = useState<FamilyMember | null>(null);
   const [confirmMemberId, setConfirmMemberId] = useState<string | null>(null);
+  const [loading, setLoading] = useState(false);
+  const [viewDoc, setViewDoc] = useState<Document | null>(null);
+  const [editDoc, setEditDoc] = useState<Document | null>(null);
 
   if (!client) {
     return (
@@ -266,28 +59,142 @@ export default function ClientDetailPage() {
     );
   }
 
+  const handlePaymentToggle = async () => {
+    setLoading(true);
+    try {
+      await updateClient(client._id, { paymentStatus: client.paymentStatus === 'CLEAR' ? 'PENDING' : 'CLEAR' });
+      toast('Payment status updated successfully', 'success');
+    } catch (err) {
+      toast('Failed to update payment status', 'error');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleServiceToggle = async () => {
+    setLoading(true);
+    try {
+      await updateClient(client._id, { serviceEnabled: !client.serviceEnabled });
+      toast('Service status updated successfully', 'success');
+    } catch (err) {
+      toast('Failed to update service status', 'error');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleDeleteMember = async () => {
+    if (!confirmMemberId) return;
+    setLoading(true);
+    try {
+      await deleteFamilyMember(client._id, confirmMemberId);
+      toast('Family member deleted successfully', 'success');
+      setConfirmMemberId(null);
+    } catch (err) {
+      toast('Failed to delete family member', 'error');
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
     <>
-      {showUploadClient && <UploadDocModal onClose={() => setShowUploadClient(false)} onSave={doc => addDocument(client.id, doc)} />}
-      {uploadMemberId && <UploadDocModal onClose={() => setUploadMemberId(null)} onSave={doc => addDocument(client.id, doc, uploadMemberId)} />}
-      {showAddMember && <AddMemberModal onClose={() => setShowAddMember(false)} onSave={m => addFamilyMember(client.id, m)} />}
+      {showUploadClient && (
+        <UploadDocModal 
+          onClose={() => setShowUploadClient(false)} 
+          onSave={async (doc) => {
+            if ('file' in doc && doc.file) {
+              await uploadDocument(client._id, doc.file, { 
+                name: doc.name, 
+                category: doc.category, 
+                itrYear: doc.itrYear 
+              });
+            } else {
+              await addDocument(client._id, doc);
+            }
+          }} 
+          isFileUpload={true}
+        />
+      )}
+      
+      {uploadMemberId && (
+        <UploadDocModal 
+          onClose={() => setUploadMemberId(null)} 
+          onSave={async (doc) => {
+            if ('file' in doc && doc.file) {
+              await uploadDocument(client._id, doc.file, { 
+                name: doc.name, 
+                category: doc.category, 
+                itrYear: doc.itrYear 
+              }, uploadMemberId);
+            } else {
+              await addDocument(client._id, doc, uploadMemberId);
+            }
+          }} 
+          isFileUpload={true}
+        />
+      )}
+      
+      {viewDoc && (
+        <ViewDocumentModal 
+          doc={viewDoc}
+          onClose={() => setViewDoc(null)}
+        />
+      )}
+      
+      {editDoc && (
+        <UploadDocModal 
+          onClose={() => setEditDoc(null)} 
+          onSave={async (doc) => {
+            // Check if we need to replace the file
+            if (doc.replaceFile && doc.file) {
+              // Update with new file
+              await updateDocumentWithFile(client._id, editDoc._id, doc.file, { 
+                name: doc.name, 
+                category: doc.category, 
+                itrYear: doc.itrYear,
+                type: doc.type,
+                size: doc.size
+              });
+            } else {
+              // Update metadata only
+              await updateDocument(client._id, editDoc._id, { 
+                name: doc.name, 
+                category: doc.category, 
+                itrYear: doc.itrYear,
+                type: doc.type,
+                size: doc.size
+              });
+            }
+            setEditDoc(null);
+          }} 
+          isFileUpload={true}
+          initialData={editDoc}
+          isEdit={true}
+        />
+      )}
+      
+      {showAddMember && <AddMemberModal onClose={() => setShowAddMember(false)} onSave={m => addFamilyMember(client._id, m)} />}
+      
       {editMember && (
         <EditMemberModal
           member={editMember}
           onClose={() => setEditMember(null)}
-          onSave={(data) => {
-            const updated = client.familyMembers.map(m =>
-              m.id === editMember.id ? { ...m, ...data } : m
-            );
-            updateClient(client.id, { familyMembers: updated });
+          onSave={async (data) => {
+            await updateClient(client._id, {
+              familyMembers: client.familyMembers.map(m =>
+                m._id === editMember._id ? { ...m, ...data } : m
+              )
+            });
           }}
         />
       )}
+      
       {confirmMemberId && (
         <ConfirmModal
           message="This will permanently delete the family member and all their documents."
           onCancel={() => setConfirmMemberId(null)}
-          onConfirm={() => { deleteFamilyMember(client.id, confirmMemberId); setConfirmMemberId(null); }}
+          onConfirm={handleDeleteMember}
         />
       )}
 
@@ -307,13 +214,15 @@ export default function ClientDetailPage() {
                 {client.email && <span>{client.email}</span>}
                 <span>{client.phone}</span>
                 <button
-                  onClick={() => updateClient(client.id, { paymentStatus: client.paymentStatus === 'CLEAR' ? 'PENDING' : 'CLEAR' })}
-                  className={`px-3 py-1 rounded-full text-[10px] font-bold tracking-wider cursor-pointer transition-colors ${client.paymentStatus === 'CLEAR' ? 'bg-green-100 text-green-700 hover:bg-green-200' : 'bg-red-100 text-red-600 hover:bg-red-200'}`}>
+                  onClick={handlePaymentToggle}
+                  disabled={loading}
+                  className={`px-3 py-1 rounded-full text-[10px] font-bold tracking-wider cursor-pointer transition-colors ${client.paymentStatus === 'CLEAR' ? 'bg-green-100 text-green-700 hover:bg-green-200' : 'bg-red-100 text-red-600 hover:bg-red-200'} disabled:opacity-50`}>
                   Payment: {client.paymentStatus}
                 </button>
                 <button
-                  onClick={() => updateClient(client.id, { serviceEnabled: !client.serviceEnabled })}
-                  className={`px-3 py-1 rounded-full text-[10px] font-bold tracking-wider cursor-pointer transition-colors ${client.serviceEnabled ? 'bg-blue-100 text-blue-700 hover:bg-blue-200' : 'bg-gray-100 text-gray-500 hover:bg-gray-200'}`}>
+                  onClick={handleServiceToggle}
+                  disabled={loading}
+                  className={`px-3 py-1 rounded-full text-[10px] font-bold tracking-wider cursor-pointer transition-colors ${client.serviceEnabled ? 'bg-blue-100 text-blue-700 hover:bg-blue-200' : 'bg-gray-100 text-gray-500 hover:bg-gray-200'} disabled:opacity-50`}>
                   Service: {client.serviceEnabled ? 'ON' : 'OFF'}
                 </button>
                 <span className="text-[10px] text-gray-400">Since {client.createdAt}</span>
@@ -355,8 +264,10 @@ export default function ClientDetailPage() {
             </div>
             <DocumentList
               docs={client.documents}
-              onDelete={docId => deleteDocument(client.id, docId)}
+              onDelete={docId => deleteDocument(client._id, docId)}
               onAdd={() => setShowUploadClient(true)}
+              onView={(doc) => setViewDoc(doc)}
+              onEdit={(doc) => setEditDoc(doc)}
             />
           </motion.div>
         )}
@@ -383,7 +294,7 @@ export default function ClientDetailPage() {
             )}
 
             {client.familyMembers.map((member, i) => (
-              <motion.div key={member.id} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.05 }}
+              <motion.div key={member._id} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.05 }}
                 className="bg-white rounded-3xl border border-gray-100 shadow-sm overflow-hidden">
                 <div className="p-6 flex items-center gap-4">
                   <div className="w-14 h-14 rounded-2xl bg-indigo-50 flex items-center justify-center text-indigo-600 font-bold text-xl">
@@ -401,25 +312,27 @@ export default function ClientDetailPage() {
                     </div>
                   </div>
                   <div className="flex items-center gap-2">
-                    <button onClick={() => setExpandedMember(expandedMember === member.id ? null : member.id)}
+                    <button onClick={() => setExpandedMember(expandedMember === member._id ? null : member._id)}
                       className="p-2 text-gray-400 hover:text-gray-900 transition-colors">
-                      {expandedMember === member.id ? <ChevronUp size={20} /> : <ChevronDown size={20} />}
+                      {expandedMember === member._id ? <ChevronUp size={20} /> : <ChevronDown size={20} />}
                     </button>
                     <button onClick={() => setEditMember(member)} className="p-2 text-gray-400 hover:text-indigo-500 transition-colors">
                       <Pencil size={16} />
                     </button>
-                    <button onClick={() => setConfirmMemberId(member.id)} className="p-2 text-gray-400 hover:text-red-500 transition-colors">
+                    <button onClick={() => setConfirmMemberId(member._id)} className="p-2 text-gray-400 hover:text-red-500 transition-colors">
                       <Trash2 size={18} />
                     </button>
                   </div>
                 </div>
 
-                {expandedMember === member.id && (
+                {expandedMember === member._id && (
                   <div className="px-6 pb-6 border-t border-gray-50 pt-4">
                     <DocumentList
                       docs={member.documents}
-                      onDelete={docId => deleteDocument(client.id, docId, member.id)}
-                      onAdd={() => setUploadMemberId(member.id)}
+                      onDelete={docId => deleteDocument(client._id, docId, member._id)}
+                      onAdd={() => setUploadMemberId(member._id)}
+                      onView={(doc) => setViewDoc(doc)}
+                      onEdit={(doc) => setEditDoc(doc)}
                     />
                   </div>
                 )}
