@@ -321,10 +321,10 @@ export default function ClientDetailPage() {
             className="bg-white rounded-3xl border border-gray-100 shadow-sm p-8">
             <div className="flex items-center justify-between mb-6">
               <h3 className="text-xl font-bold text-gray-900">{client.name}'s Documents</h3>
-              <button onClick={() => setShowUploadClient(true)}
+              {/* <button onClick={() => setShowUploadClient(true)}
                 className="bg-blue-600 hover:bg-blue-700 text-white px-5 py-2.5 rounded-xl flex items-center gap-2 font-bold text-sm transition-colors shadow-lg shadow-blue-100">
                 <Plus size={16} /> Upload Document
-              </button>
+              </button> */}
             </div>
             <DocumentList
               docs={client.documents}

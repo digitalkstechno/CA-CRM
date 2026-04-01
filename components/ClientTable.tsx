@@ -36,7 +36,7 @@ function CopyPhone({ phone }: { phone: string }) {
 
 function AddClientModal({ onClose, onSuccess }: { onClose: () => void; onSuccess: () => void }) {
   const { toast } = useToast();
-  const [form, setForm] = useState({ name: '', email: '', phone: '', paymentStatus: 'CLEAR' as Client['paymentStatus'], serviceEnabled: true });
+  const [form, setForm] = useState({ name: '', email: '', phone: '', paymentStatus: 'PENDING' as Client['paymentStatus'], serviceEnabled: true });
   const [loading, setLoading] = useState(false);
   useEscClose(onClose);
 

@@ -219,7 +219,7 @@ export default function DocumentList({
         />
       )}
       
-      {/* <div className="flex items-center justify-between mb-4">
+      <div className="flex items-center justify-between mb-4">
         <p className="text-sm font-bold text-gray-500">{docs.length} document{docs.length !== 1 ? 's' : ''}</p>
         <button 
           onClick={onAdd} 
@@ -227,7 +227,7 @@ export default function DocumentList({
         >
           <Upload size={14} /> Upload
         </button>
-      </div> */}
+      </div>
       
       {docs.length === 0 ? (
         <div className="text-center py-12 text-gray-400 text-sm border-2 border-dashed border-gray-100 rounded-2xl">

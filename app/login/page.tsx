@@ -110,9 +110,6 @@ export default function LoginPage() {
             </button>
           </form>
 
-          <p className="text-center text-xs text-gray-400 mt-6">
-            Default: <span className="font-bold text-gray-500">admin</span> / <span className="font-bold text-gray-500">vault@2024</span>
-          </p>
         </div>
       </motion.div>
     </div>
