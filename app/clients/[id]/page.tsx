@@ -1,12 +1,13 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
-import { useStore, Document, FamilyMember, DOCUMENT_CATEGORIES, ITR_YEARS } from '@/lib/store';
+import { Document, FamilyMember, DOCUMENT_CATEGORIES, ITR_YEARS } from '@/lib/store';
 import { useToast } from '@/components/Toast';
 import { motion } from 'motion/react';
 import { ArrowLeft, Plus, Trash2, FileText, UserPlus, Upload, X, ChevronDown, ChevronUp, Pencil, File, Eye, Edit3, Download, RefreshCw } from 'lucide-react';
 import Link from 'next/link';
+import { api } from '@/lib/api';
 import { UploadDocModal } from '@/components/fileupload/UploadDocModal';
 import ViewDocumentModal from '@/components/fileupload/ViewDocumentModal';
 import AddMemberModal from '@/components/fileupload/AddMemberModal';
@@ -31,12 +32,41 @@ function ConfirmModal({ message, onConfirm, onCancel }: { message: string; onCon
   );
 }
 
+type Client = {
+  _id: string;
+  name: string;
+  email: string;
+  phone: string;
+  paymentStatus: 'CLEAR' | 'PENDING';
+  serviceEnabled: boolean;
+  createdAt: string;
+  documents: Document[];
+  familyMembers: FamilyMember[];
+};
+
 export default function ClientDetailPage() {
   const { id } = useParams<{ id: string }>();
   const router = useRouter();
-  const { clients, updateClient, addFamilyMember, deleteFamilyMember, addDocument, uploadDocument, updateDocument, updateDocumentWithFile, deleteDocument } = useStore();
   const { toast } = useToast();
-  const client = clients.find(c => c._id === id);
+  const [client, setClient] = useState<Client | null>(null);
+  // const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchClient = async () => {
+      try {
+        setLoading(true);
+        const data = await api.get(`/clients/${id}`);
+        setClient(data);
+      } catch (error) {
+        toast('Failed to load client', 'error');
+        router.push('/clients');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    if (id) fetchClient();
+  }, [id, toast, router]);
 
   const totalDocs = client ? client.documents.length + client.familyMembers.reduce((a, m) => a + m.documents.length, 0) : 0;
   const [tab, setTab] = useState<'documents' | 'family'>('documents');
@@ -59,11 +89,21 @@ export default function ClientDetailPage() {
     );
   }
 
+  const refreshClient = async () => {
+    try {
+      const data = await api.get(`/clients/${id}`);
+      setClient(data);
+    } catch (error) {
+      toast('Failed to refresh client data', 'error');
+    }
+  };
+
   const handlePaymentToggle = async () => {
     setLoading(true);
     try {
-      await updateClient(client._id, { paymentStatus: client.paymentStatus === 'CLEAR' ? 'PENDING' : 'CLEAR' });
+      await api.put(`/clients/${client._id}`, { paymentStatus: client.paymentStatus === 'CLEAR' ? 'PENDING' : 'CLEAR' });
       toast('Payment status updated successfully', 'success');
+      await refreshClient();
     } catch (err) {
       toast('Failed to update payment status', 'error');
     } finally {
@@ -74,8 +114,9 @@ export default function ClientDetailPage() {
   const handleServiceToggle = async () => {
     setLoading(true);
     try {
-      await updateClient(client._id, { serviceEnabled: !client.serviceEnabled });
+      await api.put(`/clients/${client._id}`, { serviceEnabled: !client.serviceEnabled });
       toast('Service status updated successfully', 'success');
+      await refreshClient();
     } catch (err) {
       toast('Failed to update service status', 'error');
     } finally {
@@ -87,9 +128,10 @@ export default function ClientDetailPage() {
     if (!confirmMemberId) return;
     setLoading(true);
     try {
-      await deleteFamilyMember(client._id, confirmMemberId);
+      await api.delete(`/clients/${client._id}/family/${confirmMemberId}`);
       toast('Family member deleted successfully', 'success');
       setConfirmMemberId(null);
+      await refreshClient();
     } catch (err) {
       toast('Failed to delete family member', 'error');
     } finally {
@@ -100,37 +142,50 @@ export default function ClientDetailPage() {
   return (
     <>
       {showUploadClient && (
-        <UploadDocModal 
-          onClose={() => setShowUploadClient(false)} 
+        <UploadDocModal
+          onClose={() => setShowUploadClient(false)}
           onSave={async (doc) => {
-            if ('file' in doc && doc.file) {
-              await uploadDocument(client._id, doc.file, { 
-                name: doc.name, 
-                category: doc.category, 
-                itrYear: doc.itrYear 
-              });
-            } else {
-              await addDocument(client._id, doc);
+            try {
+              if ('file' in doc && doc.file) {
+                const formData = new FormData();
+                formData.append('file', doc.file);
+                formData.append('name', doc.name);
+                formData.append('category', doc.category);
+                if (doc.itrYear) formData.append('itrYear', doc.itrYear);
+                await api.post(`/clients/${client._id}/documents/upload`, formData, true);
+              } else {
+                await api.post(`/clients/${client._id}/documents`, doc);
+              }
+              await refreshClient();
+            } catch (error) {
+              throw error;
             }
-          }} 
+          }}
           isFileUpload={true}
         />
       )}
-      
+
       {uploadMemberId && (
-        <UploadDocModal 
-          onClose={() => setUploadMemberId(null)} 
+        <UploadDocModal
+          onClose={() => setUploadMemberId(null)}
           onSave={async (doc) => {
-            if ('file' in doc && doc.file) {
-              await uploadDocument(client._id, doc.file, { 
-                name: doc.name, 
-                category: doc.category, 
-                itrYear: doc.itrYear 
-              }, uploadMemberId);
-            } else {
-              await addDocument(client._id, doc, uploadMemberId);
+            try {
+              if ('file' in doc && doc.file) {
+                const formData = new FormData();
+                formData.append('file', doc.file);
+                formData.append('name', doc.name);
+                formData.append('category', doc.category);
+                if (doc.itrYear) formData.append('itrYear', doc.itrYear);
+                formData.append('memberId', uploadMemberId);
+                await api.post(`/clients/${client._id}/documents/upload`, formData, true);
+              } else {
+                await api.post(`/clients/${client._id}/documents`, { ...doc, memberId: uploadMemberId });
+              }
+              await refreshClient();
+            } catch (error) {
+              throw error;
             }
-          }} 
+          }}
           isFileUpload={true}
         />
       )}
@@ -143,49 +198,58 @@ export default function ClientDetailPage() {
       )}
       
       {editDoc && (
-        <UploadDocModal 
-          onClose={() => setEditDoc(null)} 
+        <UploadDocModal
+          onClose={() => setEditDoc(null)}
           onSave={async (doc) => {
-            // Check if we need to replace the file
-            if (doc.replaceFile && doc.file) {
-              // Update with new file
-              await updateDocumentWithFile(client._id, editDoc._id, doc.file, { 
-                name: doc.name, 
-                category: doc.category, 
-                itrYear: doc.itrYear,
-                type: doc.type,
-                size: doc.size
-              });
-            } else {
-              // Update metadata only
-              await updateDocument(client._id, editDoc._id, { 
-                name: doc.name, 
-                category: doc.category, 
-                itrYear: doc.itrYear,
-                type: doc.type,
-                size: doc.size
-              });
+            try {
+              // Check if we need to replace the file
+              if (doc.replaceFile && doc.file) {
+                // Update with new file
+                const formData = new FormData();
+                formData.append('file', doc.file);
+                if (doc.name) formData.append('name', doc.name);
+                if (doc.category) formData.append('category', doc.category);
+                if (doc.itrYear) formData.append('itrYear', doc.itrYear);
+                await api.put(`/clients/${client._id}/documents/${editDoc._id}`, formData, true);
+              } else {
+                // Update metadata only
+                await api.put(`/clients/${client._id}/documents/${editDoc._id}`, {
+                  name: doc.name,
+                  category: doc.category,
+                  itrYear: doc.itrYear,
+                  type: doc.type,
+                  size: doc.size
+                });
+              }
+              await refreshClient();
+              setEditDoc(null);
+            } catch (error) {
+              throw error;
             }
-            setEditDoc(null);
-          }} 
+          }}
           isFileUpload={true}
           initialData={editDoc}
           isEdit={true}
         />
       )}
       
-      {showAddMember && <AddMemberModal onClose={() => setShowAddMember(false)} onSave={m => addFamilyMember(client._id, m)} />}
-      
+      {showAddMember && <AddMemberModal onClose={() => setShowAddMember(false)} onSave={async (m) => {
+        await api.post(`/clients/${client._id}/family`, m);
+        await refreshClient();
+      }} />}
+
       {editMember && (
         <EditMemberModal
           member={editMember}
           onClose={() => setEditMember(null)}
           onSave={async (data) => {
-            await updateClient(client._id, {
-              familyMembers: client.familyMembers.map(m =>
+            // For simplicity, we'll update the local state since member edit doesn't have a direct API
+            setClient(prev => prev ? {
+              ...prev,
+              familyMembers: prev.familyMembers.map(m =>
                 m._id === editMember._id ? { ...m, ...data } : m
               )
-            });
+            } : null);
           }}
         />
       )}
@@ -264,7 +328,10 @@ export default function ClientDetailPage() {
             </div>
             <DocumentList
               docs={client.documents}
-              onDelete={docId => deleteDocument(client._id, docId)}
+              onDelete={async (docId) => {
+                await api.delete(`/clients/${client._id}/documents/${docId}`);
+                await refreshClient();
+              }}
               onAdd={() => setShowUploadClient(true)}
               onView={(doc) => setViewDoc(doc)}
               onEdit={(doc) => setEditDoc(doc)}
@@ -329,7 +396,10 @@ export default function ClientDetailPage() {
                   <div className="px-6 pb-6 border-t border-gray-50 pt-4">
                     <DocumentList
                       docs={member.documents}
-                      onDelete={docId => deleteDocument(client._id, docId, member._id)}
+                      onDelete={async (docId) => {
+                        await api.delete(`/clients/${client._id}/documents/${docId}/${member._id}`);
+                        await refreshClient();
+                      }}
                       onAdd={() => setUploadMemberId(member._id)}
                       onView={(doc) => setViewDoc(doc)}
                       onEdit={(doc) => setEditDoc(doc)}

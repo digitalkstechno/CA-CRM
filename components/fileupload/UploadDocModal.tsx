@@ -399,7 +399,9 @@ export function UploadDocModal({
         itrYear: initialData?.itrYear,
     });
     const [file, setFile] = useState<File | null>(null);
+    const [backFile, setBackFile] = useState<File | null>(null);
     const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+    const [backPreviewUrl, setBackPreviewUrl] = useState<string | null>(null);
     const [uploadNewFile, setUploadNewFile] = useState(false);
 
     // Fetch ITR years from backend
@@ -418,7 +420,9 @@ export function UploadDocModal({
         fetchItrYears();
     }, []);
 
-    const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    console.log(form.category,'form.category')
+
+    const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>, isBackFile = false) => {
         const selectedFile = e.target.files?.[0];
         if (selectedFile) {
             // Validate file size (max 10MB)
@@ -427,24 +431,35 @@ export function UploadDocModal({
                 return;
             }
 
-            setFile(selectedFile);
-            const fileSizeMB = (selectedFile.size / (1024 * 1024)).toFixed(2);
-            const fileExtension = selectedFile.name.split('.').pop()?.toUpperCase() || 'Unknown';
-            const fileType = getFileType(selectedFile.type, fileExtension);
-
-            setForm(p => ({
-                ...p,
-                name: selectedFile.name,
-                size: fileSizeMB + ' MB',
-                type: fileType
-            }));
-
-            // Create preview for images
-            if (selectedFile.type.startsWith('image/')) {
-                const url = URL.createObjectURL(selectedFile);
-                setPreviewUrl(url);
+            if (isBackFile) {
+                setBackFile(selectedFile);
+                // Create preview for back file
+                if (selectedFile.type.startsWith('image/')) {
+                    const url = URL.createObjectURL(selectedFile);
+                    setBackPreviewUrl(url);
+                } else {
+                    setBackPreviewUrl(null);
+                }
             } else {
-                setPreviewUrl(null);
+                setFile(selectedFile);
+                const fileSizeMB = (selectedFile.size / (1024 * 1024)).toFixed(2);
+                const fileExtension = selectedFile.name.split('.').pop()?.toUpperCase() || 'Unknown';
+                const fileType = getFileType(selectedFile.type, fileExtension);
+
+                setForm(p => ({
+                    ...p,
+                    name: selectedFile.name,
+                    size: fileSizeMB + ' MB',
+                    type: fileType
+                }));
+
+                // Create preview for images
+                if (selectedFile.type.startsWith('image/')) {
+                    const url = URL.createObjectURL(selectedFile);
+                    setPreviewUrl(url);
+                } else {
+                    setPreviewUrl(null);
+                }
             }
             setUploadNewFile(true);
         }
@@ -472,7 +487,7 @@ export function UploadDocModal({
         }
 
         // For edit mode - if user selected a new file, use it, otherwise keep old file
-        if (isEdit && !uploadNewFile && !file) {
+        if (isEdit && !uploadNewFile && !file && !backFile) {
             // Update metadata only (no file change)
             setLoading(true);
             try {
@@ -495,15 +510,66 @@ export function UploadDocModal({
         }
 
         // For new upload or file replacement in edit mode
-        if ((!isEdit && isFileUpload && !file) || (isEdit && uploadNewFile && !file)) {
-            toast('Please select a file to upload', 'error');
-            return;
+        const isAadhar = form.category === 'Aadhaar Card';
+        if (isFileUpload && !isEdit) {
+            // New upload validation
+            if (isAadhar) {
+                if (!file || !backFile) {
+                    toast('Please select both front and back files for Aadhaar Card', 'error');
+                    return;
+                }
+            } else {
+                if (!file) {
+                    toast('Please select a file to upload', 'error');
+                    return;
+                }
+            }
+        } else if (isEdit && uploadNewFile) {
+            // Edit mode file replacement validation
+            if (isAadhar) {
+                if (!file && !backFile) {
+                    toast('Please select at least one file to replace', 'error');
+                    return;
+                }
+            } else {
+                if (!file) {
+                    toast('Please select a file to upload', 'error');
+                    return;
+                }
+            }
         }
 
         setLoading(true);
         try {
-            if (file) {
-                // Upload new file (for both new uploads and file replacement in edit)
+            if (isAadhar && (file || backFile)) {
+                // Handle Aadhaar Card - upload both front and back sequentially
+                if (file) {
+                    await onSave({
+                        file,
+                        name: form.name + ' - Front',
+                        category: form.category,
+                        itrYear: form.itrYear,
+                        type: form.type,
+                        size: form.size,
+                        replaceFile: true
+                    });
+                }
+                if (backFile) {
+                    const backFileSizeMB = (backFile.size / (1024 * 1024)).toFixed(2);
+                    const backFileExtension = backFile.name.split('.').pop()?.toUpperCase() || 'Unknown';
+                    const backFileType = getFileType(backFile.type, backFileExtension);
+                    await onSave({
+                        file: backFile,
+                        name: form.name + ' - Back',
+                        category: form.category,
+                        itrYear: form.itrYear,
+                        type: backFileType,
+                        size: backFileSizeMB + ' MB',
+                        replaceFile: true
+                    });
+                }
+            } else if (file) {
+                // Upload single file (for both new uploads and file replacement in edit)
                 await onSave({
                     file,
                     name: form.name,
@@ -511,7 +577,7 @@ export function UploadDocModal({
                     itrYear: form.itrYear,
                     type: form.type,
                     size: form.size,
-                    replaceFile: true // Flag to indicate file replacement
+                    replaceFile: true
                 });
             } else {
                 // Update metadata only (no file change)
@@ -533,14 +599,17 @@ export function UploadDocModal({
         }
     };
 
-    // Cleanup preview URL on unmount
+    // Cleanup preview URLs on unmount
     React.useEffect(() => {
         return () => {
             if (previewUrl) {
                 URL.revokeObjectURL(previewUrl);
             }
+            if (backPreviewUrl) {
+                URL.revokeObjectURL(backPreviewUrl);
+            }
         };
-    }, [previewUrl]);
+    }, [previewUrl, backPreviewUrl]);
 
     const getFileIcon = () => {
         if (form.type === 'PDF') return '📄';
@@ -564,42 +633,117 @@ export function UploadDocModal({
                     {/* File upload section */}
                     {(isFileUpload) && (
                         <div>
-                            <label className="text-xs font-bold text-gray-500 uppercase tracking-wider">
-                                {isEdit ? 'Upload New File (Optional)' : 'Select File *'}
-                            </label>
-                            <div className="mt-1 border-2 border-dashed border-gray-200 rounded-xl p-6 text-center hover:border-blue-400 transition-colors">
-                                <input
-                                    type="file"
-                                    onChange={handleFileChange}
-                                    accept=".pdf,.jpg,.jpeg,.png,.doc,.docx,.xls,.xlsx"
-                                    className="hidden"
-                                    id="file-input"
-                                />
-                                <label htmlFor="file-input" className="cursor-pointer block">
-                                    {file ? (
-                                        <div className="space-y-2">
-                                            <File size={32} className="text-blue-600 mx-auto" />
-                                            <p className="text-sm font-medium text-gray-900">{file.name}</p>
-                                            <p className="text-xs text-gray-500">{(file.size / (1024 * 1024)).toFixed(2)} MB</p>
-                                            {previewUrl && (
-                                                <div className="mt-2">
-                                                    <img src={previewUrl} alt="Preview" className="max-h-32 mx-auto rounded-lg" />
+                            {form.category === 'Aadhaar Card' ? (
+                                <div className="space-y-4">
+                                    <div>
+                                        <label className="text-xs font-bold text-gray-500 uppercase tracking-wider">
+                                            Front Side *
+                                        </label>
+                                        <div className="mt-1 border-2 border-dashed border-gray-200 rounded-xl p-6 text-center hover:border-blue-400 transition-colors">
+                                            <input
+                                                type="file"
+                                                onChange={(e) => handleFileChange(e, false)}
+                                                accept=".jpg,.jpeg,.png"
+                                                className="hidden"
+                                                id="front-file-input"
+                                            />
+                                            <label htmlFor="front-file-input" className="cursor-pointer block">
+                                                {file ? (
+                                                    <div className="space-y-2">
+                                                        <File size={32} className="text-blue-600 mx-auto" />
+                                                        <p className="text-sm font-medium text-gray-900">{file.name}</p>
+                                                        <p className="text-xs text-gray-500">{(file.size / (1024 * 1024)).toFixed(2)} MB</p>
+                                                        {previewUrl && (
+                                                            <div className="mt-2">
+                                                                <img src={previewUrl} alt="Front Preview" className="max-h-32 mx-auto rounded-lg" />
+                                                            </div>
+                                                        )}
+                                                    </div>
+                                                ) : (
+                                                    <div>
+                                                        <Upload size={32} className="text-gray-400 mx-auto mb-2" />
+                                                        <p className="text-sm text-gray-500">Click to select front side</p>
+                                                        <p className="text-xs text-gray-400 mt-1">Images only (Max 10MB)</p>
+                                                    </div>
+                                                )}
+                                            </label>
+                                        </div>
+                                    </div>
+                                    <div>
+                                        <label className="text-xs font-bold text-gray-500 uppercase tracking-wider">
+                                            Back Side *
+                                        </label>
+                                        <div className="mt-1 border-2 border-dashed border-gray-200 rounded-xl p-6 text-center hover:border-blue-400 transition-colors">
+                                            <input
+                                                type="file"
+                                                onChange={(e) => handleFileChange(e, true)}
+                                                accept=".jpg,.jpeg,.png"
+                                                className="hidden"
+                                                id="back-file-input"
+                                            />
+                                            <label htmlFor="back-file-input" className="cursor-pointer block">
+                                                {backFile ? (
+                                                    <div className="space-y-2">
+                                                        <File size={32} className="text-blue-600 mx-auto" />
+                                                        <p className="text-sm font-medium text-gray-900">{backFile.name}</p>
+                                                        <p className="text-xs text-gray-500">{(backFile.size / (1024 * 1024)).toFixed(2)} MB</p>
+                                                        {backPreviewUrl && (
+                                                            <div className="mt-2">
+                                                                <img src={backPreviewUrl} alt="Back Preview" className="max-h-32 mx-auto rounded-lg" />
+                                                            </div>
+                                                        )}
+                                                    </div>
+                                                ) : (
+                                                    <div>
+                                                        <Upload size={32} className="text-gray-400 mx-auto mb-2" />
+                                                        <p className="text-sm text-gray-500">Click to select back side</p>
+                                                        <p className="text-xs text-gray-400 mt-1">Images only (Max 10MB)</p>
+                                                    </div>
+                                                )}
+                                            </label>
+                                        </div>
+                                    </div>
+                                </div>
+                            ) : (
+                                <div>
+                                    <label className="text-xs font-bold text-gray-500 uppercase tracking-wider">
+                                        {isEdit ? 'Upload New File (Optional)' : 'Select File *'}
+                                    </label>
+                                    <div className="mt-1 border-2 border-dashed border-gray-200 rounded-xl p-6 text-center hover:border-blue-400 transition-colors">
+                                        <input
+                                            type="file"
+                                            onChange={handleFileChange}
+                                            accept=".pdf,.jpg,.jpeg,.png"
+                                            className="hidden"
+                                            id="file-input"
+                                        />
+                                        <label htmlFor="file-input" className="cursor-pointer block">
+                                            {file ? (
+                                                <div className="space-y-2">
+                                                    <File size={32} className="text-blue-600 mx-auto" />
+                                                    <p className="text-sm font-medium text-gray-900">{file.name}</p>
+                                                    <p className="text-xs text-gray-500">{(file.size / (1024 * 1024)).toFixed(2)} MB</p>
+                                                    {previewUrl && (
+                                                        <div className="mt-2">
+                                                            <img src={previewUrl} alt="Preview" className="max-h-32 mx-auto rounded-lg" />
+                                                        </div>
+                                                    )}
+                                                </div>
+                                            ) : (
+                                                <div>
+                                                    <Upload size={32} className="text-gray-400 mx-auto mb-2" />
+                                                    <p className="text-sm text-gray-500">Click to select file</p>
+                                                    <p className="text-xs text-gray-400 mt-1">PDF, Images (Max 1.5MB)</p>
                                                 </div>
                                             )}
-                                        </div>
-                                    ) : (
-                                        <div>
-                                            <Upload size={32} className="text-gray-400 mx-auto mb-2" />
-                                            <p className="text-sm text-gray-500">Click to select file</p>
-                                            <p className="text-xs text-gray-400 mt-1">PDF, Images, Word, Excel (Max 10MB)</p>
-                                        </div>
+                                        </label>
+                                    </div>
+                                    {isEdit && !file && initialData && (
+                                        <p className="text-xs text-gray-500 mt-2">
+                                            Leave empty to keep the current file
+                                        </p>
                                     )}
-                                </label>
-                            </div>
-                            {isEdit && !file && initialData && (
-                                <p className="text-xs text-gray-500 mt-2">
-                                    Leave empty to keep the current file
-                                </p>
+                                </div>
                             )}
                         </div>
                     )}
@@ -645,6 +789,7 @@ export function UploadDocModal({
                                 <select
                                     value={form.type}
                                     onChange={e => setForm(p => ({ ...p, type: e.target.value }))}
+                                    disabled={isEdit}
                                     className="mt-1 w-full border border-gray-200 rounded-xl px-4 py-3 text-sm outline-none focus:ring-2 focus:ring-blue-100"
                                 >
                                     {['PDF', 'Image', 'Word', 'Excel', 'Other'].map(t => <option key={t}>{t}</option>)}
@@ -655,7 +800,7 @@ export function UploadDocModal({
                                 <select
                                     value={form.category}
                                     onChange={e => setForm(p => ({ ...p, category: e.target.value as Document['category'], itrYear: undefined }))}
-                                    className="mt-1 w-full border border-gray-200 rounded-xl px-4 py-3 text-sm outline-none focus:ring-2 focus:ring-blue-100"
+                                    className="mt-1 w-full border border-gray-200 rounded-xl px-4 py-3 text-sm outline-none focus:ring-2 focus:ring-blue-100 disabled:bg-gray-50 disabled:text-gray-500"
                                 >
                                     {DOCUMENT_CATEGORIES.map(c => <option key={c}>{c}</option>)}
                                 </select>
@@ -702,6 +847,7 @@ export function UploadDocModal({
                             <label className="text-xs font-bold text-gray-500 uppercase tracking-wider">File Size</label>
                             <input
                                 value={form.size}
+                                disabled
                                 onChange={e => setForm(p => ({ ...p, size: e.target.value }))}
                                 className="mt-1 w-full border border-gray-200 rounded-xl px-4 py-3 text-sm outline-none focus:ring-2 focus:ring-blue-100"
                                 placeholder="e.g. 1.2 MB"

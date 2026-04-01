@@ -272,18 +272,6 @@ export default function ItrYearsPage() {
           </div>
         </div>
 
-        {/* Tip Banner */}
-        <div className="bg-amber-50 border border-amber-100 rounded-2xl p-4 mb-6 flex items-start gap-3">
-          <div className="text-amber-500 text-xl mt-0.5">💡</div>
-          <div>
-            <p className="text-sm font-bold text-amber-800">How it works</p>
-            <p className="text-xs text-amber-700 mt-0.5">
-              Only <strong>Active</strong> years appear in the ITR Year dropdown when uploading documents.
-              Inactive years are hidden but existing documents are unaffected. Lower sort order = appears first.
-            </p>
-          </div>
-        </div>
-
         {/* Table Card */}
         <div className="bg-white rounded-3xl border border-gray-100 shadow-sm overflow-hidden">
           <div className="p-5 border-b border-gray-50 flex items-center justify-between">

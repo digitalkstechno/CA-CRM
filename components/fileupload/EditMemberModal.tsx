@@ -7,6 +7,7 @@ import { useToast } from '@/components/Toast';
 import { motion } from 'motion/react';
 import { ArrowLeft, Plus, Trash2, FileText, UserPlus, Upload, X, ChevronDown, ChevronUp, Pencil, File, Eye, Edit3, Download, RefreshCw } from 'lucide-react';
 import Link from 'next/link';
+import PhoneInput from '@/components/PhoneInput';
 
 export default function EditMemberModal({ member, onClose, onSave }: {
   member: FamilyMember;
@@ -47,8 +48,12 @@ export default function EditMemberModal({ member, onClose, onSave }: {
           </div>
           <div>
             <label className="text-xs font-bold text-gray-500 uppercase tracking-wider">WhatsApp Phone *</label>
-            <input value={form.phone} onChange={e => setForm(p => ({ ...p, phone: e.target.value }))}
-              className="mt-1 w-full border border-gray-200 rounded-xl px-4 py-3 text-sm outline-none focus:ring-2 focus:ring-blue-100" required />
+            <PhoneInput
+              value={form.phone}
+              onChange={(value) => setForm(p => ({ ...p, phone: value }))}
+              placeholder="Enter 10 digit mobile number"
+              required
+            />
           </div>
           <div>
             <label className="text-xs font-bold text-gray-500 uppercase tracking-wider">Email</label>

@@ -3,10 +3,20 @@
 import React from 'react';
 import { Users, FileText, UserPlus, AlertCircle } from 'lucide-react';
 import { motion } from 'motion/react';
-import { useStore } from '@/lib/store';
 
-export function DashboardStats() {
-  const { clients } = useStore();
+type Client = {
+  _id: string;
+  name: string;
+  email: string;
+  phone: string;
+  paymentStatus: 'CLEAR' | 'PENDING';
+  serviceEnabled: boolean;
+  createdAt: string;
+  documents: any[];
+  familyMembers: any[];
+};
+
+export function DashboardStats({ clients }: { clients: Client[] }) {
 
   const totalDocs = clients.reduce((acc, c) => {
     const memberDocs = c.familyMembers.reduce((a, m) => a + m.documents.length, 0);

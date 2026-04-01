@@ -1,10 +1,15 @@
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api';
 
-function getToken(): string | null {
-  if (typeof window !== 'undefined') {
-    return localStorage.getItem('vault_token');
-  }
+function getCookie(name: string): string | null {
+  if (typeof window === 'undefined') return null;
+  const value = `; ${document.cookie}`;
+  const parts = value.split(`; ${name}=`);
+  if (parts.length === 2) return parts.pop()?.split(';').shift() || null;
   return null;
+}
+
+function getToken(): string | null {
+  return getCookie('vault_token');
 }
 
 async function fetchApi(endpoint: string, options: RequestInit = {}) {

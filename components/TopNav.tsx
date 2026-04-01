@@ -3,23 +3,51 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Search, Bell, X } from 'lucide-react';
 import Link from 'next/link';
-import { useStore } from '@/lib/store';
+import { api } from '@/lib/api';
 
 export function TopNav() {
-  const { clients } = useStore();
   const [query, setQuery] = useState('');
   const [open, setOpen] = useState(false);
+  const [results, setResults] = useState<any[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [pendingCount, setPendingCount] = useState(0);
   const ref = useRef<HTMLDivElement>(null);
 
-  const pendingCount = clients.filter(c => c.paymentStatus === 'PENDING').length;
+  // Fetch pending count on mount
+  useEffect(() => {
+    const fetchPendingCount = async () => {
+      try {
+        const data = await api.get('/clients?limit=9999');
+        const count = data.clients.filter((c: any) => c.paymentStatus === 'PENDING').length;
+        setPendingCount(count);
+      } catch (error) {
+        // silent fail
+      }
+    };
+    fetchPendingCount();
+  }, []);
 
-  const results = query.trim().length > 0
-    ? clients.filter(c =>
-        c.name.toLowerCase().includes(query.toLowerCase()) ||
-        c.phone.includes(query) ||
-        (c.email && c.email.toLowerCase().includes(query.toLowerCase()))
-      ).slice(0, 6)
-    : [];
+  useEffect(() => {
+    const searchClients = async () => {
+      if (query.trim().length === 0) {
+        setResults([]);
+        return;
+      }
+
+      setLoading(true);
+      try {
+        const data = await api.get(`/clients/search?q=${encodeURIComponent(query.trim())}&limit=10`);
+        setResults(data);
+      } catch (error) {
+        setResults([]);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    const debounceTimer = setTimeout(searchClients, 300);
+    return () => clearTimeout(debounceTimer);
+  }, [query]);
 
   useEffect(() => {
     function handleClick(e: MouseEvent) {
@@ -48,33 +76,38 @@ export function TopNav() {
             </button>
           )}
 
-          {open && results.length > 0 && (
+          {open && query.trim().length > 0 && (
             <div className="absolute top-full mt-2 w-full bg-white rounded-2xl shadow-xl border border-gray-100 overflow-hidden z-50">
-              {results.map(c => (
+              {loading ? (
+                <div className="px-4 py-6 text-center">
+                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600 mx-auto mb-2"></div>
+                  <p className="text-sm text-gray-400">Searching...</p>
+                </div>
+              ) : results.length > 0 ? (
+                results.map(c => (
                   <Link
                     key={c._id}
                     href={`/clients/${c._id}`}
-                  onClick={() => { setQuery(''); setOpen(false); }}
-                  className="flex items-center gap-3 px-4 py-3 hover:bg-gray-50 transition-colors"
-                >
-                  <div className="w-9 h-9 rounded-xl bg-blue-50 flex items-center justify-center text-blue-600 font-bold text-sm flex-shrink-0">
-                    {c.name.charAt(0)}
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm font-bold text-gray-900 truncate">{c.name}</p>
-                    <p className="text-xs text-gray-400 truncate">{c.phone}</p>
-                  </div>
-                  <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${c.paymentStatus === 'CLEAR' ? 'bg-green-50 text-green-600' : 'bg-red-50 text-red-500'}`}>
-                    {c.paymentStatus}
-                  </span>
-                </Link>
-              ))}
-            </div>
-          )}
-
-          {open && query.trim().length > 0 && results.length === 0 && (
-            <div className="absolute top-full mt-2 w-full bg-white rounded-2xl shadow-xl border border-gray-100 px-4 py-6 text-center text-sm text-gray-400 z-50">
-              No clients found for "{query}"
+                    onClick={() => { setQuery(''); setOpen(false); }}
+                    className="flex items-center gap-3 px-4 py-3 hover:bg-gray-50 transition-colors"
+                  >
+                    <div className="w-9 h-9 rounded-xl bg-blue-50 flex items-center justify-center text-blue-600 font-bold text-sm flex-shrink-0">
+                      {c.name.charAt(0)}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-bold text-gray-900 truncate">{c.name}</p>
+                      <p className="text-xs text-gray-400 truncate">{c.phone}</p>
+                    </div>
+                    <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${c.paymentStatus === 'CLEAR' ? 'bg-green-50 text-green-600' : 'bg-red-50 text-red-500'}`}>
+                      {c.paymentStatus}
+                    </span>
+                  </Link>
+                ))
+              ) : (
+                <div className="px-4 py-6 text-center text-sm text-gray-400">
+                  No clients found for "{query}"
+                </div>
+              )}
             </div>
           )}
         </div>

@@ -6,6 +6,7 @@ import Link from 'next/link';
 import { Client } from '@/lib/store';
 import { api } from '@/lib/api';
 import { useToast } from './Toast';
+import PhoneInput from './PhoneInput';
 
 function useEscClose(onClose: () => void) {
   useEffect(() => {
@@ -75,8 +76,12 @@ function AddClientModal({ onClose, onSuccess }: { onClose: () => void; onSuccess
           </div>
           <div>
             <label className="text-xs font-bold text-gray-500 uppercase tracking-wider">WhatsApp Phone *</label>
-            <input value={form.phone} onChange={e => setForm(p => ({ ...p, phone: e.target.value }))}
-              className="mt-1 w-full border border-gray-200 rounded-xl px-4 py-3 text-sm outline-none focus:ring-2 focus:ring-blue-100" placeholder="+91 98765 43210" required />
+            <PhoneInput
+              value={form.phone}
+              onChange={(value) => setForm(p => ({ ...p, phone: value }))}
+              placeholder="Enter 10 digit mobile number"
+              required
+            />
           </div>
           <div className="grid grid-cols-2 gap-4">
             <div>
@@ -150,8 +155,12 @@ function EditClientModal({ client, onClose, onSuccess }: { client: Client; onClo
           </div>
           <div>
             <label className="text-xs font-bold text-gray-500 uppercase tracking-wider">WhatsApp Phone *</label>
-            <input value={form.phone} onChange={e => setForm(p => ({ ...p, phone: e.target.value }))}
-              className="mt-1 w-full border border-gray-200 rounded-xl px-4 py-3 text-sm outline-none focus:ring-2 focus:ring-blue-100" required />
+            <PhoneInput
+              value={form.phone}
+              onChange={(value) => setForm(p => ({ ...p, phone: value }))}
+              placeholder="Enter 10 digit mobile number"
+              required
+            />
           </div>
           <div className="grid grid-cols-2 gap-4">
             <div>
@@ -204,20 +213,20 @@ function ConfirmModal({ message, onConfirm, onCancel }: { message: string; onCon
 
 function getPageNumbers(currentPage: number, totalPages: number): (number | '...')[] {
   if (totalPages <= 7) return Array.from({ length: totalPages }, (_, i) => i + 1);
-  
+
   const pages: (number | '...')[] = [1];
-  
+
   if (currentPage > 3) pages.push('...');
-  
+
   const start = Math.max(2, currentPage - 1);
   const end = Math.min(totalPages - 1, currentPage + 1);
-  
+
   for (let i = start; i <= end; i++) pages.push(i);
-  
+
   if (currentPage < totalPages - 2) pages.push('...');
-  
+
   if (totalPages > 1) pages.push(totalPages);
-  
+
   return pages;
 }
 
@@ -228,7 +237,7 @@ export function ClientTable() {
   const [totalItems, setTotalItems] = useState(0);
   const [totalPages, setTotalPages] = useState(1);
   const [currentPage, setCurrentPage] = useState(1);
-  const [limit] = useState(15);
+  const [limit] = useState(10);
 
   const [payFilter, setPayFilter] = useState<'ALL' | 'CLEAR' | 'PENDING'>('ALL');
   const [svcFilter, setSvcFilter] = useState<'ALL' | 'ON' | 'OFF'>('ALL');
@@ -519,11 +528,10 @@ export function ClientTable() {
                     key={page}
                     onClick={() => setCurrentPage(page)}
                     disabled={loading}
-                    className={`min-w-[36px] h-9 rounded-lg text-sm font-bold transition-colors ${
-                      currentPage === page
-                        ? 'bg-blue-600 text-white shadow-md shadow-blue-100'
-                        : 'text-gray-500 hover:bg-gray-100 hover:text-gray-900'
-                    } disabled:cursor-not-allowed`}
+                    className={`min-w-[36px] h-9 rounded-lg text-sm font-bold transition-colors ${currentPage === page
+                      ? 'bg-blue-600 text-white shadow-md shadow-blue-100'
+                      : 'text-gray-500 hover:bg-gray-100 hover:text-gray-900'
+                      } disabled:cursor-not-allowed`}
                   >
                     {page}
                   </button>

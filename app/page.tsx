@@ -1,14 +1,39 @@
 'use client';
 
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { DashboardStats } from '@/components/DashboardStats';
 import { motion } from 'motion/react';
 import { Users, ArrowRight, FileText, UserPlus } from 'lucide-react';
 import Link from 'next/link';
-import { useStore } from '@/lib/store';
+import { api } from '@/lib/api';
+
+type Client = {
+  _id: string;
+  name: string;
+  email: string;
+  phone: string;
+  paymentStatus: 'CLEAR' | 'PENDING';
+  serviceEnabled: boolean;
+  createdAt: string;
+  documents: any[];
+  familyMembers: any[];
+};
 
 export default function DashboardPage() {
-  const { clients } = useStore();
+  const [clients, setClients] = useState<Client[]>([]);
+
+  useEffect(() => {
+    const fetchClients = async () => {
+      try {
+        const data = await api.get('/clients?limit=20');
+        setClients(data.clients || []);
+      } catch (error) {
+        // silent fail
+      }
+    };
+    fetchClients();
+  }, []);
+
   const recent = [...clients].reverse().slice(0, 5);
   const clearClients = clients.filter(c => c.paymentStatus === 'CLEAR');
 
@@ -19,7 +44,7 @@ export default function DashboardPage() {
         <p className="text-gray-500 mt-2">Overview of all clients, family members, and documents.</p>
       </div>
 
-      <DashboardStats />
+      <DashboardStats clients={clients} />
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         {/* Recent Clients */}

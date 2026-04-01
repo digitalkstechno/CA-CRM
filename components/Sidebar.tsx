@@ -3,7 +3,7 @@
 import React from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { LayoutDashboard, Users, HelpCircle, Shield, LogOut } from 'lucide-react';
+import { LayoutDashboard, Users, HelpCircle, Shield, LogOut, Settings, DatabaseZapIcon } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/lib/auth';
 import { useRouter } from 'next/navigation';
@@ -14,10 +14,25 @@ const navItems = [
   { icon: HelpCircle, label: 'Help Center', href: '/help' },
 ];
 
+const adminNavItems = [
+  { icon: DatabaseZapIcon, label: 'ITR Years', href: '/settings/itr-years' },
+  { icon: Settings, label: 'Staff Management', href: '/settings/staff' },
+];
+
+function getCookie(name: string): string | null {
+  if (typeof window === 'undefined') return null;
+  const value = `; ${document.cookie}`;
+  const parts = value.split(`; ${name}=`);
+  if (parts.length === 2) return parts.pop()?.split(';').shift() || null;
+  return null;
+}
+
 export function Sidebar() {
   const pathname = usePathname();
   const { logout } = useAuth();
   const router = useRouter();
+  const userRole = getCookie('user_role');
+  const isAdmin = userRole === 'admin';
 
   const handleLogout = () => {
     logout();
@@ -59,6 +74,34 @@ export function Sidebar() {
             </Link>
           );
         })}
+
+        {isAdmin && (
+          <>
+            <div className="px-4 py-2">
+              <p className="text-[10px] uppercase tracking-wider text-gray-400 font-bold">Admin</p>
+            </div>
+            {adminNavItems.map((item) => {
+              const isActive = pathname === item.href || pathname.startsWith(item.href + '/');
+              return (
+                <Link
+                  key={item.href}
+                  href={item.href}
+                  className={cn(
+                    'flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 group',
+                    isActive ? 'bg-blue-50 text-blue-600' : 'text-gray-500 hover:bg-gray-50 hover:text-gray-900'
+                  )}
+                >
+                  <item.icon size={20} className={cn(
+                    'transition-colors',
+                    isActive ? 'text-blue-600' : 'text-gray-400 group-hover:text-gray-900'
+                  )} />
+                  <span className="font-medium text-sm">{item.label}</span>
+                  {isActive && <div className="ml-auto w-1.5 h-6 bg-blue-600 rounded-full" />}
+                </Link>
+              );
+            })}
+          </>
+        )}
       </nav>
 
       <div className="p-4 border-t border-gray-100">
