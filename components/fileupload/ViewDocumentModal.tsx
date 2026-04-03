@@ -79,6 +79,14 @@ const isImageDocument = (doc: Document) => {
   return doc.type === 'Image' || ['jpg', 'jpeg', 'png', 'gif', 'webp', 'bmp'].includes(extension || '');
 };
 
+// Helper function to get document URL
+const getDocumentUrl = (filePath: string) => {
+  if (filePath.startsWith('https://')) {
+    return filePath;
+  }
+  return (process.env.NEXT_PUBLIC_IMAGE_URL || 'http://localhost:5000') + filePath;
+};
+
 // Enhanced Document View Modal
 export default function ViewDocumentModal({ doc, onClose }: { doc: Document; onClose: () => void }) {
   const [isLoading, setIsLoading] = useState(false);
@@ -93,7 +101,7 @@ export default function ViewDocumentModal({ doc, onClose }: { doc: Document; onC
 
     setIsLoading(true);
     try {
-      const response = await fetch(`${process.env.NEXT_PUBLIC_IMAGE_URL || 'http://localhost:5000'}${doc.filePath}`);
+      const response = await fetch(getDocumentUrl(doc.filePath));
       const blob = await response.blob();
       const url = window.URL.createObjectURL(blob);
       const a = document.createElement('a');
@@ -113,7 +121,7 @@ export default function ViewDocumentModal({ doc, onClose }: { doc: Document; onC
 
   // Get full image URL
   const getImageUrl = () => {
-    return `${process.env.NEXT_PUBLIC_IMAGE_URL || 'http://localhost:5000'}${doc.filePath}`;
+    return getDocumentUrl(doc.filePath);
   };
 
   return (
@@ -228,7 +236,7 @@ export default function ViewDocumentModal({ doc, onClose }: { doc: Document; onC
                   </a>
                 ) : (
                   <a
-                    href={`${process.env.NEXT_PUBLIC_IMAGE_URL || 'http://localhost:5000'}${doc.filePath}`}
+                    href={getDocumentUrl(doc.filePath)}
                     target="_blank"
                     rel="noopener noreferrer"
                     className="flex-1 flex items-center justify-center gap-2 py-3 rounded-xl bg-blue-600 text-white text-sm font-bold hover:bg-blue-700 transition-colors"
