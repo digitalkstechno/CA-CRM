@@ -151,6 +151,7 @@ export default function ClientDetailPage() {
                 formData.append('file', doc.file);
                 formData.append('name', doc.name);
                 formData.append('category', doc.category);
+                if (doc.subCategory) formData.append('subCategory', doc.subCategory);
                 if (doc.itrYear) formData.append('itrYear', doc.itrYear);
                 await api.post(`/clients/${client._id}/documents/upload`, formData, true);
               } else {
@@ -175,6 +176,7 @@ export default function ClientDetailPage() {
                 formData.append('file', doc.file);
                 formData.append('name', doc.name);
                 formData.append('category', doc.category);
+                if (doc.subCategory) formData.append('subCategory', doc.subCategory);
                 if (doc.itrYear) formData.append('itrYear', doc.itrYear);
                 formData.append('memberId', uploadMemberId);
                 await api.post(`/clients/${client._id}/documents/upload`, formData, true);
@@ -209,6 +211,7 @@ export default function ClientDetailPage() {
                 formData.append('file', doc.file);
                 if (doc.name) formData.append('name', doc.name);
                 if (doc.category) formData.append('category', doc.category);
+                if (doc.subCategory) formData.append('subCategory', doc.subCategory);
                 if (doc.itrYear) formData.append('itrYear', doc.itrYear);
                 await api.put(`/clients/${client._id}/documents/${editDoc._id}`, formData, true);
               } else {
@@ -216,6 +219,7 @@ export default function ClientDetailPage() {
                 await api.put(`/clients/${client._id}/documents/${editDoc._id}`, {
                   name: doc.name,
                   category: doc.category,
+                  subCategory: doc.subCategory,
                   itrYear: doc.itrYear,
                   type: doc.type,
                   size: doc.size
@@ -370,11 +374,8 @@ export default function ClientDetailPage() {
                   <div className="flex-1">
                     <div className="flex items-center gap-3">
                       <h4 className="font-bold text-gray-900 text-lg">{member.name}</h4>
-                      <span className="px-2.5 py-1 rounded-lg bg-indigo-50 text-indigo-600 text-[10px] font-bold uppercase tracking-wider">{member.relation}</span>
                     </div>
                     <div className="flex items-center gap-4 mt-1 text-xs text-gray-400">
-                      <span>{member.phone}</span>
-                      {member.email && <span>{member.email}</span>}
                       <span className="text-blue-600 font-bold">{member.documents.length} docs</span>
                     </div>
                   </div>

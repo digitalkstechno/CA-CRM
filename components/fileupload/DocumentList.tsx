@@ -304,7 +304,7 @@ export default function DocumentList({
                   <div className="flex-1 min-w-0">
                     <p className="text-sm font-bold text-gray-900 truncate">{doc.name}</p>
                     <p className="text-[10px] text-gray-400">
-                      {doc.category}{doc.itrYear ? ` · ITR ${doc.itrYear}` : ''} · {doc.type} · {doc.size} · {doc.uploadedAt}
+                      {doc.category}{doc.category === 'Other' && doc.subCategory ? ` · ${doc.subCategory}` : ''}{doc.itrYear ? ` · ITR ${doc.itrYear}` : ''} · {doc.type} · {doc.size} · {doc.uploadedAt}
                     </p>
                   </div>
                   <div className="flex items-center gap-1">

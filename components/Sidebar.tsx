@@ -32,8 +32,11 @@ export function Sidebar() {
   const pathname = usePathname();
   const { logout } = useAuth();
   const router = useRouter();
-  const userRole = getCookie('user_role');
-  const isAdmin = userRole === 'admin';
+  const [isAdmin, setIsAdmin] = React.useState(false);
+
+  React.useEffect(() => {
+    setIsAdmin(getCookie('user_role') === 'admin');
+  }, []);
 
   const handleLogout = () => {
     logout();

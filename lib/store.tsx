@@ -16,6 +16,7 @@ export type Document = {
   size: string;
   uploadedAt: string;
   category: DocumentCategory;
+  subCategory?: string;
   itrYear?: ItrYear;
   filePath?: string;
 };
@@ -23,9 +24,6 @@ export type Document = {
 export type FamilyMember = {
   _id: string;
   name: string;
-  relation: string;
-  phone: string;
-  email: string;
   documents: Document[];
 };
 
@@ -60,9 +58,9 @@ type Store = {
   addFamilyMember: (clientId: string, m: Omit<FamilyMember, '_id' | 'documents'>) => Promise<void>;
   deleteFamilyMember: (clientId: string, memberId: string) => Promise<void>;
   addDocument: (clientId: string, doc: Omit<Document, '_id' | 'uploadedAt'>, memberId?: string) => Promise<void>;
-  uploadDocument: (clientId: string, file: File, data: { name: string; category: DocumentCategory; itrYear?: ItrYear }, memberId?: string) => Promise<void>;
-  updateDocument: (clientId: string, docId: string, data: { name?: string; category?: DocumentCategory; itrYear?: ItrYear; type?: string; size?: string }, memberId?: string) => Promise<void>;
-  updateDocumentWithFile: (clientId: string, docId: string, file: File, data: { name?: string; category?: DocumentCategory; itrYear?: ItrYear; type?: string; size?: string }, memberId?: string) => Promise<void>;
+  uploadDocument: (clientId: string, file: File, data: { name: string; category: DocumentCategory; subCategory?: string; itrYear?: ItrYear }, memberId?: string) => Promise<void>;
+  updateDocument: (clientId: string, docId: string, data: { name?: string; category?: DocumentCategory; subCategory?: string; itrYear?: ItrYear; type?: string; size?: string }, memberId?: string) => Promise<void>;
+  updateDocumentWithFile: (clientId: string, docId: string, file: File, data: { name?: string; category?: DocumentCategory; subCategory?: string; itrYear?: ItrYear; type?: string; size?: string }, memberId?: string) => Promise<void>;
   deleteDocument: (clientId: string, docId: string, memberId?: string) => Promise<void>;
   findByPhone: (phone: string) => Client | undefined;
 
@@ -158,12 +156,13 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
-  const uploadDocument = async (clientId: string, file: File, data: { name: string; category: DocumentCategory; itrYear?: ItrYear }, memberId?: string) => {
+  const uploadDocument = async (clientId: string, file: File, data: { name: string; category: DocumentCategory; subCategory?: string; itrYear?: ItrYear }, memberId?: string) => {
     try {
       const formData = new FormData();
       formData.append('file', file);
       formData.append('name', data.name);
       formData.append('category', data.category);
+      if (data.subCategory) formData.append('subCategory', data.subCategory);
       if (data.itrYear) formData.append('itrYear', data.itrYear);
       if (memberId) formData.append('memberId', memberId);
       
@@ -175,7 +174,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
-  const updateDocument = async (clientId: string, docId: string, data: { name?: string; category?: DocumentCategory; itrYear?: ItrYear }, memberId?: string) => {
+  const updateDocument = async (clientId: string, docId: string, data: { name?: string; category?: DocumentCategory; subCategory?: string; itrYear?: ItrYear }, memberId?: string) => {
     try {
       const endpoint = memberId 
         ? `/clients/${clientId}/documents/${docId}/${memberId}` 
@@ -188,12 +187,13 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
-  const updateDocumentWithFile = async (clientId: string, docId: string, file: File, data: { name?: string; category?: DocumentCategory; itrYear?: ItrYear; type?: string; size?: string }, memberId?: string) => {
+  const updateDocumentWithFile = async (clientId: string, docId: string, file: File, data: { name?: string; category?: DocumentCategory; subCategory?: string; itrYear?: ItrYear; type?: string; size?: string }, memberId?: string) => {
     try {
       const formData = new FormData();
       formData.append('file', file);
       if (data.name) formData.append('name', data.name);
       if (data.category) formData.append('category', data.category);
+      if (data.subCategory) formData.append('subCategory', data.subCategory);
       if (data.itrYear) formData.append('itrYear', data.itrYear);
       
       const endpoint = memberId 
