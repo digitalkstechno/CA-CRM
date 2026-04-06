@@ -390,6 +390,7 @@ export function ClientTable() {
             <thead>
               <tr className="text-[10px] uppercase tracking-widest text-gray-400 font-bold border-b border-gray-50">
                 <th className="px-8 py-6">Client Name</th>
+                <th className="px-8 py-6">AC No.</th>
                 <th className="px-8 py-6">WhatsApp Phone</th>
                 <th className="px-8 py-6 text-center">Family</th>
                 <th className="px-8 py-6 text-center">Docs</th>
@@ -436,6 +437,7 @@ export function ClientTable() {
                         </div>
                       </div>
                     </td>
+                    <td className="px-8 py-5"><CopyPhone phone={client._id} /></td>
                     <td className="px-8 py-5"><CopyPhone phone={client.phone} /></td>
                     <td className="px-8 py-5 text-center">
                       <span className="inline-flex items-center justify-center w-8 h-8 rounded-lg bg-gray-100 text-gray-900 font-bold text-xs">
