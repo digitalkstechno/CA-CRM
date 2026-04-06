@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import { useStore, Document, DOCUMENT_CATEGORIES } from '@/lib/store';
 import { useToast } from '@/components/Toast';
-import { Upload, X, File, FileText } from 'lucide-react';
+import { Upload, X, File } from 'lucide-react';
 import { api } from '@/lib/api';
 
 const FIXED_CATEGORIES = ['PAN Card', 'Aadhaar Card', 'GST Certificate', 'Udyam Certificate', 'ITR'] as const;
@@ -42,9 +42,7 @@ export function UploadDocModal({
     });
     const [otherSubCategory, setOtherSubCategory] = useState(isInitialOther ? (initialData?.category || '') : '');
     const [file, setFile] = useState<File | null>(null);
-    const [backFile, setBackFile] = useState<File | null>(null);
     const [previewUrl, setPreviewUrl] = useState<string | null>(null);
-    const [backPreviewUrl, setBackPreviewUrl] = useState<string | null>(null);
     const [uploadNewFile, setUploadNewFile] = useState(false);
 
     useEffect(() => {
@@ -73,13 +71,12 @@ export function UploadDocModal({
         fetchMasters();
     }, []);
 
-    // Cleanup preview URLs on unmount
+    // Cleanup preview URL on unmount
     useEffect(() => {
         return () => {
             if (previewUrl) URL.revokeObjectURL(previewUrl);
-            if (backPreviewUrl) URL.revokeObjectURL(backPreviewUrl);
         };
-    }, [previewUrl, backPreviewUrl]);
+    }, [previewUrl]);
 
     const getFileType = (mimeType: string, extension: string): string => {
         if (mimeType.includes('pdf')) return 'PDF';
@@ -89,23 +86,18 @@ export function UploadDocModal({
         return 'Other';
     };
 
-    const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>, isBackFile = false) => {
+    const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const selectedFile = e.target.files?.[0];
         if (!selectedFile) return;
         if (selectedFile.size > 10 * 1024 * 1024) {
             toast('File size should be less than 10MB', 'error');
             return;
         }
-        if (isBackFile) {
-            setBackFile(selectedFile);
-            setBackPreviewUrl(selectedFile.type.startsWith('image/') ? URL.createObjectURL(selectedFile) : null);
-        } else {
-            setFile(selectedFile);
-            const fileSizeMB = (selectedFile.size / (1024 * 1024)).toFixed(2);
-            const ext = selectedFile.name.split('.').pop()?.toUpperCase() || '';
-            setForm(p => ({ ...p, name: selectedFile.name, size: fileSizeMB + ' MB', type: getFileType(selectedFile.type, ext) }));
-            setPreviewUrl(selectedFile.type.startsWith('image/') ? URL.createObjectURL(selectedFile) : null);
-        }
+        setFile(selectedFile);
+        const fileSizeMB = (selectedFile.size / (1024 * 1024)).toFixed(2);
+        const ext = selectedFile.name.split('.').pop()?.toUpperCase() || '';
+        setForm(p => ({ ...p, name: selectedFile.name, size: fileSizeMB + ' MB', type: getFileType(selectedFile.type, ext) }));
+        setPreviewUrl(selectedFile.type.startsWith('image/') ? URL.createObjectURL(selectedFile) : null);
         setUploadNewFile(true);
     };
 
@@ -127,8 +119,6 @@ export function UploadDocModal({
             return;
         }
 
-        const isAadhar = form.category === 'Aadhaar Card';
-
         // Edit mode — no new file selected → metadata only update
         if (isEdit && !uploadNewFile) {
             setLoading(true);
@@ -145,29 +135,14 @@ export function UploadDocModal({
         }
 
         // Validation for new upload
-        if (isFileUpload && !isEdit) {
-            if (isAadhar && (!file || !backFile)) {
-                toast('Please select both front and back files for Aadhaar Card', 'error');
-                return;
-            }
-            if (!isAadhar && !file) {
-                toast('Please select a file to upload', 'error');
-                return;
-            }
+        if (isFileUpload && !isEdit && !file) {
+            toast('Please select a file to upload', 'error');
+            return;
         }
 
         setLoading(true);
         try {
-            if (isAadhar && (file || backFile)) {
-                if (file) {
-                    await onSave({ file, name: form.name + ' - Front', category: form.category, subCategory, itrYear: form.itrYear, type: form.type, size: form.size, replaceFile: true });
-                }
-                if (backFile) {
-                    const sz = (backFile.size / (1024 * 1024)).toFixed(2);
-                    const ext = backFile.name.split('.').pop()?.toUpperCase() || '';
-                    await onSave({ file: backFile, name: form.name + ' - Back', category: form.category, subCategory, itrYear: form.itrYear, type: getFileType(backFile.type, ext), size: sz + ' MB', replaceFile: true });
-                }
-            } else if (file) {
+            if (file) {
                 await onSave({ file, name: form.name, category: form.category, subCategory, itrYear: form.itrYear, type: form.type, size: form.size, replaceFile: true });
             } else {
                 await onSave({ ...form, subCategory, size: form.size || 'N/A', replaceFile: false });
@@ -214,83 +189,30 @@ export function UploadDocModal({
                     {/* File upload section */}
                     {isFileUpload && (
                         <div>
-                            {form.category === 'Aadhaar Card' ? (
-                                <div className="space-y-4">
-                                    {/* Front */}
-                                    <div>
-                                        <label className="text-xs font-bold text-gray-500 uppercase tracking-wider">Front Side *</label>
-                                        <div className="mt-1 border-2 border-dashed border-gray-200 rounded-xl p-6 text-center hover:border-blue-400 transition-colors">
-                                            <input type="file" onChange={e => handleFileChange(e, false)} accept=".jpg,.jpeg,.png" className="hidden" id="front-file-input" />
-                                            <label htmlFor="front-file-input" className="cursor-pointer block">
-                                                {file ? (
-                                                    <div className="space-y-2">
-                                                        <File size={32} className="text-blue-600 mx-auto" />
-                                                        <p className="text-sm font-medium text-gray-900">{file.name}</p>
-                                                        <p className="text-xs text-gray-500">{(file.size / (1024 * 1024)).toFixed(2)} MB</p>
-                                                        {previewUrl && <img src={previewUrl} alt="Front Preview" className="max-h-32 mx-auto rounded-lg mt-2" />}
-                                                    </div>
-                                                ) : (
-                                                    <div>
-                                                        <Upload size={32} className="text-gray-400 mx-auto mb-2" />
-                                                        <p className="text-sm text-gray-500">Click to select front side</p>
-                                                        <p className="text-xs text-gray-400 mt-1">Images only (Max 10MB)</p>
-                                                    </div>
-                                                )}
-                                            </label>
+                            <label className="text-xs font-bold text-gray-500 uppercase tracking-wider">
+                                {isEdit ? 'Upload New File (Optional)' : 'Select File *'}
+                            </label>
+                            <div className="mt-1 border-2 border-dashed border-gray-200 rounded-xl p-6 text-center hover:border-blue-400 transition-colors">
+                                <input type="file" onChange={handleFileChange} accept=".pdf,.jpg,.jpeg,.png" className="hidden" id="file-input" />
+                                <label htmlFor="file-input" className="cursor-pointer block">
+                                    {file ? (
+                                        <div className="space-y-2">
+                                            <File size={32} className="text-blue-600 mx-auto" />
+                                            <p className="text-sm font-medium text-gray-900">{file.name}</p>
+                                            <p className="text-xs text-gray-500">{(file.size / (1024 * 1024)).toFixed(2)} MB</p>
+                                            {previewUrl && <img src={previewUrl} alt="Preview" className="max-h-32 mx-auto rounded-lg mt-2" />}
                                         </div>
-                                    </div>
-                                    {/* Back */}
-                                    <div>
-                                        <label className="text-xs font-bold text-gray-500 uppercase tracking-wider">Back Side *</label>
-                                        <div className="mt-1 border-2 border-dashed border-gray-200 rounded-xl p-6 text-center hover:border-blue-400 transition-colors">
-                                            <input type="file" onChange={e => handleFileChange(e, true)} accept=".jpg,.jpeg,.png" className="hidden" id="back-file-input" />
-                                            <label htmlFor="back-file-input" className="cursor-pointer block">
-                                                {backFile ? (
-                                                    <div className="space-y-2">
-                                                        <File size={32} className="text-blue-600 mx-auto" />
-                                                        <p className="text-sm font-medium text-gray-900">{backFile.name}</p>
-                                                        <p className="text-xs text-gray-500">{(backFile.size / (1024 * 1024)).toFixed(2)} MB</p>
-                                                        {backPreviewUrl && <img src={backPreviewUrl} alt="Back Preview" className="max-h-32 mx-auto rounded-lg mt-2" />}
-                                                    </div>
-                                                ) : (
-                                                    <div>
-                                                        <Upload size={32} className="text-gray-400 mx-auto mb-2" />
-                                                        <p className="text-sm text-gray-500">Click to select back side</p>
-                                                        <p className="text-xs text-gray-400 mt-1">Images only (Max 10MB)</p>
-                                                    </div>
-                                                )}
-                                            </label>
+                                    ) : (
+                                        <div>
+                                            <Upload size={32} className="text-gray-400 mx-auto mb-2" />
+                                            <p className="text-sm text-gray-500">Click to select file</p>
+                                            <p className="text-xs text-gray-400 mt-1">PDF, Images (Max 10MB)</p>
                                         </div>
-                                    </div>
-                                </div>
-                            ) : (
-                                <div>
-                                    <label className="text-xs font-bold text-gray-500 uppercase tracking-wider">
-                                        {isEdit ? 'Upload New File (Optional)' : 'Select File *'}
-                                    </label>
-                                    <div className="mt-1 border-2 border-dashed border-gray-200 rounded-xl p-6 text-center hover:border-blue-400 transition-colors">
-                                        <input type="file" onChange={handleFileChange} accept=".pdf,.jpg,.jpeg,.png" className="hidden" id="file-input" />
-                                        <label htmlFor="file-input" className="cursor-pointer block">
-                                            {file ? (
-                                                <div className="space-y-2">
-                                                    <File size={32} className="text-blue-600 mx-auto" />
-                                                    <p className="text-sm font-medium text-gray-900">{file.name}</p>
-                                                    <p className="text-xs text-gray-500">{(file.size / (1024 * 1024)).toFixed(2)} MB</p>
-                                                    {previewUrl && <img src={previewUrl} alt="Preview" className="max-h-32 mx-auto rounded-lg mt-2" />}
-                                                </div>
-                                            ) : (
-                                                <div>
-                                                    <Upload size={32} className="text-gray-400 mx-auto mb-2" />
-                                                    <p className="text-sm text-gray-500">Click to select file</p>
-                                                    <p className="text-xs text-gray-400 mt-1">PDF, Images (Max 1.5MB)</p>
-                                                </div>
-                                            )}
-                                        </label>
-                                    </div>
-                                    {isEdit && !file && initialData && (
-                                        <p className="text-xs text-gray-500 mt-2">Leave empty to keep the current file</p>
                                     )}
-                                </div>
+                                </label>
+                            </div>
+                            {isEdit && !file && initialData && (
+                                <p className="text-xs text-gray-500 mt-2">Leave empty to keep the current file</p>
                             )}
                         </div>
                     )}
