@@ -45,7 +45,7 @@ function AddClientModal({ onClose, onSuccess }: { onClose: () => void; onSuccess
     if (!form.name.trim() || !form.phone.trim()) return;
     setLoading(true);
     try {
-      await api.post('/clients', form);
+      await api.post('/clients', { ...form, phone: '91' + form.phone });
       toast('Client added successfully');
       onSuccess();
       onClose();
@@ -115,7 +115,7 @@ function AddClientModal({ onClose, onSuccess }: { onClose: () => void; onSuccess
 
 function EditClientModal({ client, onClose, onSuccess }: { client: Client; onClose: () => void; onSuccess: () => void }) {
   const { toast } = useToast();
-  const [form, setForm] = useState({ name: client.name, email: client.email, phone: client.phone, paymentStatus: client.paymentStatus, serviceEnabled: client.serviceEnabled });
+  const [form, setForm] = useState({ name: client.name, email: client.email, phone: client.phone.slice(2), paymentStatus: client.paymentStatus, serviceEnabled: client.serviceEnabled });
   const [loading, setLoading] = useState(false);
   useEscClose(onClose);
 
@@ -124,7 +124,7 @@ function EditClientModal({ client, onClose, onSuccess }: { client: Client; onClo
     if (!form.name.trim() || !form.phone.trim()) return;
     setLoading(true);
     try {
-      await api.put(`/clients/${client._id}`, form);
+      await api.put(`/clients/${client._id}`, {form , phone: '91' + form.phone });
       toast('Client updated successfully');
       onSuccess();
       onClose();
