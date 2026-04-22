@@ -13,13 +13,15 @@ export function UploadDocModal({
     onSave,
     isFileUpload = true,
     initialData,
-    isEdit = false
+    isEdit = false,
+    existingDocs = []
 }: {
     onClose: () => void;
     onSave: (doc: any) => Promise<void>;
     isFileUpload?: boolean;
     initialData?: Document;
     isEdit?: boolean;
+    existingDocs?: Document[];
 }) {
     const { toast } = useToast();
     const [loading, setLoading] = useState(false);
@@ -117,6 +119,28 @@ export function UploadDocModal({
         if (form.category === 'Other' && !otherSubCategory) {
             toast('Please select a sub-category', 'error');
             return;
+        }
+
+        // Duplicate category validation (skip for the doc being edited)
+        const otherDocs = existingDocs.filter(d => !initialData || d._id !== initialData._id);
+        if (form.category === 'ITR') {
+            const duplicate = otherDocs.find(d => d.category === 'ITR' && d.itrYear === form.itrYear);
+            if (duplicate) {
+                toast(`ITR ${form.itrYear} document already exists`, 'error');
+                return;
+            }
+        } else if (form.category === 'Other') {
+            const duplicate = otherDocs.find(d => d.category === otherSubCategory || d.subCategory === otherSubCategory);
+            if (duplicate) {
+                toast(`"${otherSubCategory}" document already exists`, 'error');
+                return;
+            }
+        } else {
+            const duplicate = otherDocs.find(d => d.category === form.category);
+            if (duplicate) {
+                toast(`"${form.category}" document already exists`, 'error');
+                return;
+            }
         }
 
         // Edit mode — no new file selected → metadata only update

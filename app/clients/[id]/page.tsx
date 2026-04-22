@@ -79,6 +79,7 @@ export default function ClientDetailPage() {
   const [loading, setLoading] = useState(false);
   const [viewDoc, setViewDoc] = useState<Document | null>(null);
   const [editDoc, setEditDoc] = useState<Document | null>(null);
+  const [editMemberDocId, setEditMemberDocId] = useState<string | null>(null);
 
   if (!client) {
     return (
@@ -163,6 +164,7 @@ export default function ClientDetailPage() {
             }
           }}
           isFileUpload={true}
+          existingDocs={client.documents}
         />
       )}
 
@@ -189,6 +191,7 @@ export default function ClientDetailPage() {
             }
           }}
           isFileUpload={true}
+          existingDocs={client.familyMembers.find(m => m._id === uploadMemberId)?.documents || []}
         />
       )}
       
@@ -201,32 +204,36 @@ export default function ClientDetailPage() {
       
       {editDoc && (
         <UploadDocModal
-          onClose={() => setEditDoc(null)}
+          onClose={() => { setEditDoc(null); setEditMemberDocId(null); }}
           onSave={async (doc) => {
             try {
-              // Check if we need to replace the file
               if (doc.replaceFile && doc.file) {
-                // Update with new file
                 const formData = new FormData();
                 formData.append('file', doc.file);
                 if (doc.name) formData.append('name', doc.name);
                 if (doc.category) formData.append('category', doc.category);
                 if (doc.subCategory) formData.append('subCategory', doc.subCategory);
                 if (doc.itrYear) formData.append('itrYear', doc.itrYear);
-                await api.put(`/clients/${client._id}/documents/${editDoc._id}`, formData, true);
+                const url = editMemberDocId
+                  ? `/clients/${client._id}/documents/${editDoc._id}/${editMemberDocId}`
+                  : `/clients/${client._id}/documents/${editDoc._id}`;
+                await api.put(url, formData, true);
               } else {
-                // Update metadata only
-                await api.put(`/clients/${client._id}/documents/${editDoc._id}`, {
+                const url = editMemberDocId
+                  ? `/clients/${client._id}/documents/${editDoc._id}/${editMemberDocId}`
+                  : `/clients/${client._id}/documents/${editDoc._id}`;
+                await api.put(url, {
                   name: doc.name,
                   category: doc.category,
                   subCategory: doc.subCategory,
                   itrYear: doc.itrYear,
                   type: doc.type,
-                  size: doc.size
+                  size: doc.size,
                 });
               }
               await refreshClient();
               setEditDoc(null);
+              setEditMemberDocId(null);
             } catch (error) {
               throw error;
             }
@@ -234,6 +241,10 @@ export default function ClientDetailPage() {
           isFileUpload={true}
           initialData={editDoc}
           isEdit={true}
+          existingDocs={editMemberDocId
+            ? client.familyMembers.find(m => m._id === editMemberDocId)?.documents || []
+            : client.documents
+          }
         />
       )}
       
@@ -403,7 +414,7 @@ export default function ClientDetailPage() {
                       }}
                       onAdd={() => setUploadMemberId(member._id)}
                       onView={(doc) => setViewDoc(doc)}
-                      onEdit={(doc) => setEditDoc(doc)}
+                      onEdit={(doc) => { setEditDoc(doc); setEditMemberDocId(member._id); }}
                     />
                   </div>
                 )}

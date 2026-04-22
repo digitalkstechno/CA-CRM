@@ -75,6 +75,13 @@ const getDocumentIcon = (doc: Document) => {
   return <File size={20} className="text-gray-400" />;
 };
 
+const formatDate = (dateStr: string) => {
+  if (!dateStr) return '';
+  const d = new Date(dateStr);
+  if (isNaN(d.getTime())) return dateStr;
+  return d.toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' });
+};
+
 // Function to check if document is an image
 const isImageDocument = (doc: Document) => {
   const extension = doc.name.split('.').pop()?.toLowerCase();
@@ -173,7 +180,7 @@ export default function DocumentList({
               <div className="flex-1 min-w-0">
                 <p className="text-sm font-bold text-gray-900 truncate">{doc.name}</p>
                 <p className="text-[10px] text-gray-400">
-                  {doc.category}{doc.category === 'Other' && doc.subCategory ? ` · ${doc.subCategory}` : ''}{doc.itrYear ? ` · ITR ${doc.itrYear}` : ''} · {doc.type} · {doc.size} · {doc.uploadedAt}
+                  {doc.category}{doc.category === 'Other' && doc.subCategory ? ` · ${doc.subCategory}` : ''}{doc.itrYear ? ` · ITR ${doc.itrYear}` : ''} · {doc.type} · {doc.size} · {formatDate(doc.uploadedAt)}
                 </p>
               </div>
               <div className="flex items-center gap-1">
