@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { Plus, Trash2, Pencil, X, Check, Calendar, GripVertical, ToggleLeft, ToggleRight, ArrowLeft } from 'lucide-react';
+import { Plus, Trash2, Pencil, X, Calendar, ToggleLeft, ToggleRight, ArrowLeft } from 'lucide-react';
 import Link from 'next/link';
 import { api } from '@/lib/api';
 import { useToast } from '@/components/Toast';
@@ -50,11 +50,10 @@ function AddEditModal({
 }: {
   item?: ItrYearItem | null;
   onClose: () => void;
-  onSave: (data: { year: string; isActive: boolean; order: number }) => Promise<void>;
+  onSave: (data: { year: string; isActive: boolean }) => Promise<void>;
 }) {
   const [year, setYear] = useState(item?.year || '');
   const [isActive, setIsActive] = useState(item?.isActive ?? true);
-  const [order, setOrder] = useState(item?.order ?? 0);
   const [loading, setLoading] = useState(false);
   const { toast } = useToast();
 
@@ -69,7 +68,7 @@ function AddEditModal({
     if (!year.trim()) return;
     setLoading(true);
     try {
-      await onSave({ year: year.trim(), isActive, order: Number(order) });
+      await onSave({ year: year.trim(), isActive });
       onClose();
     } catch (err: any) {
       toast(err.message || 'Failed to save', 'error');
@@ -111,18 +110,6 @@ function AddEditModal({
               className="mt-1.5 w-full border border-gray-200 rounded-xl px-4 py-3 text-sm outline-none focus:ring-2 focus:ring-indigo-100 focus:border-indigo-300 transition-all"
             />
             <p className="text-xs text-gray-400 mt-1">Format: YYYY-YY (e.g. 2025-26)</p>
-          </div>
-
-          <div>
-            <label className="text-xs font-bold text-gray-500 uppercase tracking-wider">Sort Order</label>
-            <input
-              type="number"
-              value={order}
-              onChange={e => setOrder(Number(e.target.value))}
-              min={0}
-              className="mt-1.5 w-full border border-gray-200 rounded-xl px-4 py-3 text-sm outline-none focus:ring-2 focus:ring-indigo-100 focus:border-indigo-300 transition-all"
-            />
-            <p className="text-xs text-gray-400 mt-1">Lower number = appears first in dropdown</p>
           </div>
 
           <div className="flex items-center justify-between p-4 bg-gray-50 rounded-xl border border-gray-100">
@@ -189,13 +176,13 @@ export default function ItrYearsPage() {
     fetchYears();
   }, [fetchYears]);
 
-  const handleAdd = async (data: { year: string; isActive: boolean; order: number }) => {
+  const handleAdd = async (data: { year: string; isActive: boolean }) => {
     await api.post('/itr-years', data);
     toast('ITR Year added successfully');
     fetchYears();
   };
 
-  const handleEdit = async (data: { year: string; isActive: boolean; order: number }) => {
+  const handleEdit = async (data: { year: string; isActive: boolean }) => {
     if (!editItem) return;
     await api.put(`/itr-years/${editItem._id}`, data);
     toast('ITR Year updated successfully');
@@ -306,7 +293,6 @@ export default function ItrYearsPage() {
               <thead>
                 <tr className="text-[10px] uppercase tracking-widest text-gray-400 font-bold border-b border-gray-50">
                   <th className="px-6 py-4">Year</th>
-                  <th className="px-6 py-4 text-center">Order</th>
                   <th className="px-6 py-4 text-center">Status</th>
                   <th className="px-6 py-4 text-center">In Dropdown</th>
                   <th className="px-6 py-4 text-right">Actions</th>
@@ -332,11 +318,6 @@ export default function ItrYearsPage() {
                             <p className="text-xs text-gray-400">Assessment Year</p>
                           </div>
                         </div>
-                      </td>
-                      <td className="px-6 py-4 text-center">
-                        <span className="inline-flex items-center justify-center w-8 h-8 rounded-lg bg-gray-100 text-gray-700 font-bold text-xs">
-                          {item.order}
-                        </span>
                       </td>
                       <td className="px-6 py-4 text-center">
                         <button
@@ -396,7 +377,7 @@ export default function ItrYearsPage() {
               {['2025-26', '2024-25', '2023-24', '2022-23', '2021-22', '2020-21'].map((y, i) => (
                 <button
                   key={y}
-                  onClick={() => handleAdd({ year: y, isActive: true, order: i })}
+                  onClick={() => handleAdd({ year: y, isActive: true })}
                   className="px-4 py-2 bg-white rounded-xl border border-indigo-200 text-indigo-700 text-sm font-bold hover:bg-indigo-600 hover:text-white hover:border-indigo-600 transition-all"
                 >
                   {y}

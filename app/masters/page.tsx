@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { motion } from 'motion/react';
-import { Plus, Trash2, Pencil, Search, X, CheckCircle, XCircle } from 'lucide-react';
+import { Plus, Trash2, Pencil, Search, X } from 'lucide-react';
 import { useStore } from '@/lib/store';
 import { useToast } from '@/components/Toast';
 
@@ -58,14 +58,14 @@ function AddMasterModal({ onClose, onSave }: { onClose: () => void; onSave: (mas
 }
 
 function EditMasterModal({ master, onClose, onSave }: { master: Master; onClose: () => void; onSave: (data: Partial<Master>) => Promise<void> }) {
-  const [form, setForm] = useState({ name: master.name, isActive: master.isActive });
+  const [name, setName] = useState(master.name);
   const [loading, setLoading] = useState(false);
 
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!form.name.trim()) return;
+    if (!name.trim()) return;
     setLoading(true);
-    await onSave({ ...form, type: 'other' });
+    await onSave({ name, type: 'other' });
     setLoading(false);
     onClose();
   };
@@ -81,22 +81,12 @@ function EditMasterModal({ master, onClose, onSave }: { master: Master; onClose:
           <div>
             <label className="text-xs font-bold text-gray-500 uppercase tracking-wider">Category Name *</label>
             <input
-              value={form.name}
-              onChange={e => setForm(p => ({ ...p, name: e.target.value }))}
+              value={name}
+              onChange={e => setName(e.target.value)}
               className="mt-1 w-full border border-gray-200 rounded-xl px-4 py-3 text-sm outline-none focus:ring-2 focus:ring-blue-100"
               placeholder="Enter category name"
               required
             />
-          </div>
-          <div className="flex items-center gap-3">
-            <input
-              type="checkbox"
-              id="isActive"
-              checked={form.isActive}
-              onChange={e => setForm(p => ({ ...p, isActive: e.target.checked }))}
-              className="w-4 h-4 text-blue-600 rounded border-gray-300 focus:ring-blue-500"
-            />
-            <label htmlFor="isActive" className="text-sm font-medium text-gray-700">Active</label>
           </div>
           <div className="flex gap-3 pt-2">
             <button type="button" onClick={onClose} disabled={loading} className="flex-1 py-3 rounded-xl border border-gray-200 text-sm font-bold text-gray-600 hover:bg-gray-50 disabled:opacity-50">Cancel</button>
@@ -212,15 +202,13 @@ export default function MasterPage() {
               <thead>
                 <tr className="text-[10px] uppercase tracking-widest text-gray-400 font-bold border-b border-gray-50">
                   <th className="px-8 py-6">Category Name</th>
-                  <th className="px-8 py-6">Status</th>
-                  <th className="px-8 py-6">Created</th>
                   <th className="px-8 py-6 text-right">Actions</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-50">
                 {loading && (
                   <tr>
-                    <td colSpan={4} className="px-8 py-16 text-center">
+                    <td colSpan={2} className="px-8 py-16 text-center">
                       <div className="flex items-center justify-center gap-3">
                         <svg className="animate-spin h-5 w-5 text-blue-600" fill="none" viewBox="0 0 24 24">
                           <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
@@ -233,7 +221,7 @@ export default function MasterPage() {
                 )}
                 {!loading && filteredMasters.length === 0 && (
                   <tr>
-                    <td colSpan={4} className="px-8 py-16 text-center">
+                    <td colSpan={2} className="px-8 py-16 text-center">
                       <p className="text-gray-400 text-sm">{search ? 'No categories found matching your search.' : 'No custom categories added yet.'}</p>
                       {!search && (
                         <button onClick={() => setShowAdd(true)} className="mt-3 text-blue-600 font-bold text-sm hover:underline">+ Add your first category</button>
@@ -246,19 +234,6 @@ export default function MasterPage() {
                     <td className="px-8 py-5">
                       <div className="font-bold text-gray-900">{master.name}</div>
                     </td>
-                    <td className="px-8 py-5">
-                      <div className="flex items-center gap-2">
-                        {master.isActive ? (
-                          <CheckCircle size={16} className="text-green-500" />
-                        ) : (
-                          <XCircle size={16} className="text-red-500" />
-                        )}
-                        <span className={`text-xs font-bold ${master.isActive ? 'text-green-700' : 'text-red-600'}`}>
-                          {master.isActive ? 'Active' : 'Inactive'}
-                        </span>
-                      </div>
-                    </td>
-                    <td className="px-8 py-5 text-xs text-gray-400 font-medium">{master.createdAt}</td>
                     <td className="px-8 py-5 text-right">
                       <div className="flex items-center justify-end gap-1">
                         <button
