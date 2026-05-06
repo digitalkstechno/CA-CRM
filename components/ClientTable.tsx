@@ -134,7 +134,7 @@ function EditClientModal({ client, onClose, onSuccess }: { client: Client; onClo
     if (!form.name.trim() || !form.phone.trim()) return;
     setLoading(true);
     try {
-      await api.put(`/clients/${client._id}`, {form , phone: '91' + form.phone });
+      await api.put(`/clients/${client._id}`, { ...form, phone: '91' + form.phone });
       toast('Client updated successfully');
       onSuccess();
       onClose();

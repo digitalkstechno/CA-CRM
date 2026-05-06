@@ -258,13 +258,8 @@ export default function ClientDetailPage() {
           member={editMember}
           onClose={() => setEditMember(null)}
           onSave={async (data) => {
-            // For simplicity, we'll update the local state since member edit doesn't have a direct API
-            setClient(prev => prev ? {
-              ...prev,
-              familyMembers: prev.familyMembers.map(m =>
-                m._id === editMember._id ? { ...m, ...data } : m
-              )
-            } : null);
+            await api.put(`/clients/${client._id}/family/${editMember._id}`, data);
+            await refreshClient();
           }}
         />
       )}
