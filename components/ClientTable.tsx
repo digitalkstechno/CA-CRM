@@ -65,9 +65,19 @@ function AddClientModal({ onClose, onSuccess }: { onClose: () => void; onSuccess
         </div>
         <form onSubmit={submit} className="space-y-4">
           <div>
-            <label className="text-xs font-bold text-gray-500 uppercase tracking-wider">Full Name *</label>
-            <input value={form.name} onChange={e => setForm(p => ({ ...p, name: e.target.value }))} autoFocus
-              className="mt-1 w-full border border-gray-200 rounded-xl px-4 py-3 text-sm outline-none focus:ring-2 focus:ring-blue-100" placeholder="e.g. Prince Sojitra" required />
+            <div className="flex items-center gap-1 mb-1">
+              <label className="text-xs font-bold text-gray-500 uppercase tracking-wider">Full Name *</label>
+              <div className="relative group">
+                <span className="w-4 h-4 rounded-full bg-blue-100 text-blue-600 text-[10px] font-bold flex items-center justify-center cursor-pointer select-none">i</span>
+                <div className="absolute left-1/2 -translate-x-1/2 bottom-full mb-1.5 hidden group-hover:block z-10 bg-gray-800 text-white text-[11px] rounded-lg px-3 py-1.5 whitespace-nowrap shadow-lg">
+                  Max 22 characters allowed
+                  <div className="absolute left-1/2 -translate-x-1/2 top-full w-0 h-0 border-x-4 border-x-transparent border-t-4 border-t-gray-800" />
+                </div>
+              </div>
+              <span className={`ml-auto text-[11px] font-semibold ${form.name.length >= 22 ? 'text-red-500' : 'text-gray-400'}`}>{form.name.length}/22</span>
+            </div>
+            <input value={form.name} onChange={e => setForm(p => ({ ...p, name: e.target.value }))} autoFocus maxLength={22}
+              className="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm outline-none focus:ring-2 focus:ring-blue-100" placeholder="e.g. Prince Sojitra" required />
           </div>
           <div>
             <label className="text-xs font-bold text-gray-500 uppercase tracking-wider">Email</label>
@@ -144,9 +154,19 @@ function EditClientModal({ client, onClose, onSuccess }: { client: Client; onClo
         </div>
         <form onSubmit={submit} className="space-y-4">
           <div>
-            <label className="text-xs font-bold text-gray-500 uppercase tracking-wider">Full Name *</label>
-            <input value={form.name} onChange={e => setForm(p => ({ ...p, name: e.target.value }))} autoFocus
-              className="mt-1 w-full border border-gray-200 rounded-xl px-4 py-3 text-sm outline-none focus:ring-2 focus:ring-blue-100" required />
+            <div className="flex items-center gap-1 mb-1">
+              <label className="text-xs font-bold text-gray-500 uppercase tracking-wider">Full Name *</label>
+              <div className="relative group">
+                <span className="w-4 h-4 rounded-full bg-blue-100 text-blue-600 text-[10px] font-bold flex items-center justify-center cursor-pointer select-none">i</span>
+                <div className="absolute left-1/2 -translate-x-1/2 bottom-full mb-1.5 hidden group-hover:block z-10 bg-gray-800 text-white text-[11px] rounded-lg px-3 py-1.5 whitespace-nowrap shadow-lg">
+                  Max 22 characters allowed
+                  <div className="absolute left-1/2 -translate-x-1/2 top-full w-0 h-0 border-x-4 border-x-transparent border-t-4 border-t-gray-800" />
+                </div>
+              </div>
+              <span className={`ml-auto text-[11px] font-semibold ${form.name.length >= 22 ? 'text-red-500' : 'text-gray-400'}`}>{form.name.length}/22</span>
+            </div>
+            <input value={form.name} onChange={e => setForm(p => ({ ...p, name: e.target.value }))} autoFocus maxLength={22}
+              className="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm outline-none focus:ring-2 focus:ring-blue-100" required />
           </div>
           <div>
             <label className="text-xs font-bold text-gray-500 uppercase tracking-wider">Email</label>
