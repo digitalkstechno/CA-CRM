@@ -6,6 +6,8 @@ import { useAuth } from '@/lib/auth';
 import { Shield, Eye, EyeOff, Lock, User, ArrowRight, CheckCircle2, Globe, Zap } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 
+import { BrandLogo } from '@/components/BrandLogo';
+
 export default function LoginPage() {
   const { login } = useAuth();
   const router = useRouter();
@@ -47,13 +49,8 @@ export default function LoginPage() {
         {/* Left Side: Branding */}
         <div className="hidden lg:flex flex-col justify-between p-12 bg-slate-50 border-r border-slate-100 relative min-h-[550px]">
           <div className="relative z-10">
-            <div className="w-12 h-12 bg-blue-600 rounded-xl flex items-center justify-center mb-8 shadow-lg shadow-blue-100">
-              <Shield size={24} className="text-white" />
-            </div>
+            <BrandLogo size="lg" className="mb-12" />
             <motion.div initial={{ x: -20, opacity: 0 }} animate={{ x: 0, opacity: 1 }} transition={{ delay: 0.1 }}>
-              <h2 className="text-3xl font-bold text-slate-900 tracking-tight leading-tight mb-6">
-                Manage your <span className="text-blue-600 font-extrabold">Client Flow</span> with ease.
-              </h2>
               <p className="text-slate-600 text-base font-medium max-w-xs mb-4">
                 Professional system for CAs. <br />
                 Secure, fast, and intuitive.

@@ -28,6 +28,8 @@ function getCookie(name: string): string | null {
   return null;
 }
 
+import { BrandLogo } from './BrandLogo';
+
 export function Sidebar() {
   const pathname = usePathname();
   const { logout } = useAuth();
@@ -45,14 +47,8 @@ export function Sidebar() {
 
   return (
     <aside className="fixed left-0 top-0 h-screen w-72 bg-white border-r border-slate-200/60 flex flex-col z-50 shadow-[4px_0_24px_-10px_rgba(0,0,0,0.02)]">
-      <div className="p-8 flex items-center gap-4">
-        <div className="w-11 h-11 bg-gradient-to-br from-blue-500 to-blue-700 rounded-2xl flex items-center justify-center text-white shadow-lg shadow-blue-200 rotate-3 transform hover:rotate-0 transition-transform duration-300">
-          <Shield size={24} className="drop-shadow-sm" />
-        </div>
-        <div>
-          <h1 className="font-extrabold text-xl tracking-tight text-slate-900 leading-none">CA <span className="text-blue-600">Flow</span></h1>
-          <p className="text-[11px] uppercase tracking-[0.15em] text-slate-400 font-bold mt-1.5">Management</p>
-        </div>
+      <div className="p-8">
+        <BrandLogo />
       </div>
 
       <div className="flex-1 px-6 py-4 space-y-8 overflow-y-auto">
