@@ -11,7 +11,7 @@ type AuthCtx = {
   loading: boolean;
 };
 
-const AuthContext = createContext<AuthCtx>({ isLoggedIn: false, login: async () => false, logout: () => {}, loading: true });
+const AuthContext = createContext<AuthCtx>({ isLoggedIn: false, login: async () => false, logout: () => { }, loading: true });
 
 function getCookie(name: string): string | null {
   if (typeof window === 'undefined') return null;
@@ -36,7 +36,7 @@ function deleteCookie(name: string) {
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [isLoggedIn, setIsLoggedIn] = useState(() => {
     if (typeof window !== 'undefined') {
-      return !!getCookie('vault_token');
+      return !!getCookie('caflow_token');
     }
     return false;
   });
@@ -62,7 +62,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
       if (res.ok) {
         const data = await res.json();
-        setCookie('vault_token', data.token);
+        setCookie('caflow_token', data.token);
         setCookie('user_role', data.role || 'admin');
         setIsLoggedIn(true);
         return true;
@@ -75,7 +75,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   };
 
   const logout = () => {
-    deleteCookie('vault_token');
+    deleteCookie('caflow_token');
     deleteCookie('user_role');
     setIsLoggedIn(false);
   };

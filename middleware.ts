@@ -8,7 +8,7 @@ export function middleware(request: NextRequest) {
     return NextResponse.next();
   }
 
-  const token = request.cookies.get('vault_token')?.value;
+  const token = request.cookies.get('caflow_token')?.value;
 
   if (pathname === '/login') {
     if (token) {

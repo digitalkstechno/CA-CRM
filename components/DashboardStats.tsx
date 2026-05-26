@@ -27,28 +27,30 @@ export function DashboardStats({ clients }: { clients: Client[] }) {
   const pendingPayments = clients.filter(c => c.paymentStatus === 'PENDING').length;
 
   const stats = [
-    { label: 'Total Clients', value: clients.length, icon: Users, color: 'bg-blue-50 text-blue-600', delay: 0 },
-    { label: 'Family Members', value: totalMembers, icon: UserPlus, color: 'bg-indigo-50 text-indigo-600', delay: 0.1 },
-    { label: 'Total Documents', value: totalDocs, icon: FileText, color: 'bg-orange-50 text-orange-600', delay: 0.2 },
-    { label: 'Payment Pending', value: pendingPayments, icon: AlertCircle, color: 'bg-red-50 text-red-500', delay: 0.3 },
+    { label: 'Total Clients', value: clients.length, icon: Users, color: 'from-blue-500 to-blue-700', bg: 'bg-blue-50/50', delay: 0 },
+    { label: 'Family Members', value: totalMembers, icon: UserPlus, color: 'from-indigo-500 to-indigo-700', bg: 'bg-indigo-50/50', delay: 0.1 },
+    { label: 'Total Documents', value: totalDocs, icon: FileText, color: 'from-orange-500 to-orange-700', bg: 'bg-orange-50/50', delay: 0.2 },
+    { label: 'Pending Payments', value: pendingPayments, icon: AlertCircle, color: 'from-rose-500 to-rose-700', bg: 'bg-rose-50/50', delay: 0.3 },
   ];
 
   return (
-    <div className="grid grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-10">
       {stats.map((stat) => (
         <motion.div
           key={stat.label}
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: stat.delay }}
-          className="bg-white p-6 rounded-3xl border border-gray-100 shadow-sm flex items-center gap-6"
+          initial={{ opacity: 0, scale: 0.95 }}
+          animate={{ opacity: 1, scale: 1 }}
+          transition={{ delay: stat.delay, type: 'spring', stiffness: 100 }}
+          className="bg-white p-7 rounded-[2.5rem] border border-slate-100 shadow-[0_15px_40px_rgba(0,0,0,0.02)] flex items-center gap-6 hover-card relative overflow-hidden group"
         >
-          <div className={`w-14 h-14 rounded-2xl flex items-center justify-center ${stat.color}`}>
-            <stat.icon size={28} />
+          <div className={`absolute top-0 right-0 w-24 h-24 bg-gradient-to-br ${stat.color} opacity-0 group-hover:opacity-[0.03] -mr-8 -mt-8 rounded-full transition-opacity duration-500`} />
+
+          <div className={`w-14 h-14 rounded-2xl flex items-center justify-center bg-gradient-to-br ${stat.color} text-white shadow-lg shadow-black/5 group-hover:scale-110 transition-transform duration-300`}>
+            <stat.icon size={26} className="drop-shadow-sm" />
           </div>
           <div>
-            <p className="text-[10px] uppercase tracking-widest text-gray-400 font-bold mb-1">{stat.label}</p>
-            <p className="text-3xl font-bold text-gray-900">{stat.value}</p>
+            <p className="text-[10px] uppercase tracking-[0.15em] text-slate-400 font-extrabold mb-1.5">{stat.label}</p>
+            <p className="text-3xl font-black text-slate-900 tracking-tight">{stat.value}</p>
           </div>
         </motion.div>
       ))}

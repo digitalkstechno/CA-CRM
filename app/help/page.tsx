@@ -8,7 +8,7 @@ const categories = [
   {
     icon: Shield,
     title: 'Security & Encryption',
-    description: 'Learn about how client data and documents are protected in The Vault.',
+    description: 'Learn about how client data and documents are protected in CA Flow.',
     details: 'All documents are stored securely. Access is restricted to registered WhatsApp numbers only. Payment status controls document access via the chatbot.',
   },
   {
@@ -50,7 +50,7 @@ export default function HelpPage() {
         </div>
         <h2 className="text-4xl font-bold text-gray-900 tracking-tight mb-4">How can we help you?</h2>
         <p className="text-gray-500 max-w-lg mx-auto">
-          Search our knowledge base or browse categories below to find answers about The Vault.
+          Search our knowledge base or browse categories below to find answers about CA Flow.
         </p>
 
         <div className="mt-10 relative max-w-xl mx-auto">
@@ -114,7 +114,7 @@ export default function HelpPage() {
           Our dedicated support team is available during business hours. Reach out directly for priority support.
         </p>
         <a
-          href="mailto:support@thevault.in"
+          href="mailto:support@caflow.in"
           className="inline-block bg-blue-600 hover:bg-blue-700 text-white px-10 py-4 rounded-2xl font-bold text-sm transition-all shadow-lg shadow-blue-900/20"
         >
           Contact Support Team

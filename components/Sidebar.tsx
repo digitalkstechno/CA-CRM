@@ -44,45 +44,57 @@ export function Sidebar() {
   };
 
   return (
-    <aside className="fixed left-0 top-0 h-screen w-64 bg-white border-r border-gray-100 flex flex-col z-50">
-      <div className="p-6 flex items-center gap-3">
-        <div className="w-10 h-10 bg-blue-600 rounded-xl flex items-center justify-center text-white">
-          <Shield size={24} />
+    <aside className="fixed left-0 top-0 h-screen w-72 bg-white border-r border-slate-200/60 flex flex-col z-50 shadow-[4px_0_24px_-10px_rgba(0,0,0,0.02)]">
+      <div className="p-8 flex items-center gap-4">
+        <div className="w-11 h-11 bg-gradient-to-br from-blue-500 to-blue-700 rounded-2xl flex items-center justify-center text-white shadow-lg shadow-blue-200 rotate-3 transform hover:rotate-0 transition-transform duration-300">
+          <Shield size={24} className="drop-shadow-sm" />
         </div>
         <div>
-          <h1 className="font-bold text-lg text-gray-900 leading-tight">The Vault</h1>
-          <p className="text-[10px] uppercase tracking-wider text-gray-400 font-semibold">Client Management</p>
+          <h1 className="font-extrabold text-xl tracking-tight text-slate-900 leading-none">CA <span className="text-blue-600">Flow</span></h1>
+          <p className="text-[11px] uppercase tracking-[0.15em] text-slate-400 font-bold mt-1.5">Management</p>
         </div>
       </div>
 
-      <nav className="flex-1 px-4 py-4 space-y-1">
-        {navItems.map((item) => {
-          const isActive = item.href === '/'
-            ? pathname === '/'
-            : pathname === item.href || pathname.startsWith(item.href + '/');
-          return (
-            <Link
-              key={item.href}
-              href={item.href}
-              className={cn(
-                'flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 group',
-                isActive ? 'bg-blue-50 text-blue-600' : 'text-gray-500 hover:bg-gray-50 hover:text-gray-900'
-              )}
-            >
-              <item.icon size={20} className={cn(
-                'transition-colors',
-                isActive ? 'text-blue-600' : 'text-gray-400 group-hover:text-gray-900'
-              )} />
-              <span className="font-medium text-sm">{item.label}</span>
-              {isActive && <div className="ml-auto w-1.5 h-6 bg-blue-600 rounded-full" />}
-            </Link>
-          );
-        })}
+      <div className="flex-1 px-6 py-4 space-y-8 overflow-y-auto">
+        <div className="space-y-1.5">
+          <div className="px-3 pb-3">
+            <span className="text-[11px] font-bold text-slate-400 uppercase tracking-widest">Main Menu</span>
+          </div>
+          {navItems.map((item) => {
+            const isActive = item.href === '/'
+              ? pathname === '/'
+              : pathname === item.href || pathname.startsWith(item.href + '/');
+            return (
+              <Link
+                key={item.href}
+                href={item.href}
+                className={cn(
+                  'flex items-center gap-3.5 px-4 py-3 rounded-2xl transition-all duration-300 group relative overflow-hidden',
+                  isActive
+                    ? 'bg-blue-600/5 text-blue-600 shadow-sm'
+                    : 'text-slate-500 hover:text-slate-900 hover:bg-slate-50'
+                )}
+              >
+                <item.icon size={20} className={cn(
+                  'transition-all duration-300',
+                  isActive ? 'text-blue-600 scale-110' : 'text-slate-400 group-hover:text-slate-900 group-hover:scale-110'
+                )} />
+                <span className={cn(
+                  "font-semibold text-sm transition-transform duration-300",
+                  isActive ? "translate-x-1" : "group-hover:translate-x-1"
+                )}>{item.label}</span>
+                {isActive && (
+                  <div className="absolute left-0 top-1/2 -translate-y-1/2 w-1.5 h-6 bg-blue-600 rounded-r-full" />
+                )}
+              </Link>
+            );
+          })}
+        </div>
 
         {isAdmin && (
-          <>
-            <div className="px-4 py-2">
-              <p className="text-[10px] uppercase tracking-wider text-gray-400 font-bold">Admin</p>
+          <div className="space-y-1.5 pt-4">
+            <div className="px-3 pb-3 border-t border-slate-100 pt-6">
+              <span className="text-[11px] font-bold text-slate-400 uppercase tracking-widest">Administration</span>
             </div>
             {adminNavItems.map((item) => {
               const isActive = pathname === item.href || pathname.startsWith(item.href + '/');
@@ -91,30 +103,37 @@ export function Sidebar() {
                   key={item.href}
                   href={item.href}
                   className={cn(
-                    'flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 group',
-                    isActive ? 'bg-blue-50 text-blue-600' : 'text-gray-500 hover:bg-gray-50 hover:text-gray-900'
+                    'flex items-center gap-3.5 px-4 py-3 rounded-2xl transition-all duration-300 group relative overflow-hidden',
+                    isActive
+                      ? 'bg-blue-600/5 text-blue-600 shadow-sm'
+                      : 'text-slate-500 hover:text-slate-900 hover:bg-slate-50'
                   )}
                 >
                   <item.icon size={20} className={cn(
-                    'transition-colors',
-                    isActive ? 'text-blue-600' : 'text-gray-400 group-hover:text-gray-900'
+                    'transition-all duration-300',
+                    isActive ? 'text-blue-600 scale-110' : 'text-slate-400 group-hover:text-slate-900 group-hover:scale-110'
                   )} />
-                  <span className="font-medium text-sm">{item.label}</span>
-                  {isActive && <div className="ml-auto w-1.5 h-6 bg-blue-600 rounded-full" />}
+                  <span className={cn(
+                    "font-semibold text-sm transition-transform duration-300",
+                    isActive ? "translate-x-1" : "group-hover:translate-x-1"
+                  )}>{item.label}</span>
+                  {isActive && (
+                    <div className="absolute left-0 top-1/2 -translate-y-1/2 w-1.5 h-6 bg-blue-600 rounded-r-full" />
+                  )}
                 </Link>
               );
             })}
-          </>
+          </div>
         )}
-      </nav>
+      </div>
 
-      <div className="p-4 border-t border-gray-100">
+      <div className="p-6 border-t border-slate-100 bg-slate-50/50">
         <button
           onClick={handleLogout}
-          className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-gray-500 hover:bg-red-50 hover:text-red-500 transition-all group"
+          className="w-full flex items-center gap-3 px-4 py-3 rounded-2xl text-slate-500 hover:bg-rose-50 hover:text-rose-600 transition-all duration-300 group font-semibold text-sm"
         >
-          <LogOut size={18} className="text-gray-400 group-hover:text-red-500 transition-colors" />
-          <span className="font-medium text-sm">Logout</span>
+          <LogOut size={18} className="text-slate-400 group-hover:text-rose-600 transition-transform group-hover:-translate-x-1" />
+          <span>Logout</span>
         </button>
       </div>
     </aside>

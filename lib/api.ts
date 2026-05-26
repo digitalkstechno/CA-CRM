@@ -9,7 +9,7 @@ function getCookie(name: string): string | null {
 }
 
 function getToken(): string | null {
-  return getCookie('vault_token');
+  return getCookie('caflow_token');
 }
 
 async function fetchApi(endpoint: string, options: RequestInit = {}) {
@@ -50,8 +50,8 @@ export const api = {
         return res.json();
       });
     }
-    return fetchApi(endpoint, { 
-      method: 'POST', 
+    return fetchApi(endpoint, {
+      method: 'POST',
       body: JSON.stringify(body)
     });
   },
