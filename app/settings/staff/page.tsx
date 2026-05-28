@@ -244,7 +244,7 @@ export default function StaffPage() {
         {/* Header */}
         <div className="mb-8">
           <Link
-            href="/"
+            href="/dashboard"
             className="inline-flex items-center gap-2 text-sm text-gray-400 hover:text-gray-700 font-medium mb-4 transition-colors group"
           >
             <ArrowLeft size={16} className="group-hover:-translate-x-0.5 transition-transform" />

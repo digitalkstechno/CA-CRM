@@ -7,10 +7,10 @@ import { TopNav } from './TopNav';
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
-  const isLoginPage = pathname === '/login';
+  const isPublicPage = pathname === '/login' || pathname === '/';
 
-  // Login page — render without shell
-  if (isLoginPage) return <>{children}</>;
+  // Public pages — render without shell
+  if (isPublicPage) return <>{children}</>;
 
   return (
     <div className="min-h-screen bg-[#F8F9FB] text-gray-900 font-sans">

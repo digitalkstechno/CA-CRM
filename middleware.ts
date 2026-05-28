@@ -12,10 +12,18 @@ export function middleware(request: NextRequest) {
 
   if (pathname === '/login') {
     if (token) {
-      // If logged in, redirect to home
-      return NextResponse.redirect(new URL('/', request.url));
+      // If logged in, redirect to dashboard
+      return NextResponse.redirect(new URL('/dashboard', request.url));
     }
     // Allow access to login
+    return NextResponse.next();
+  }
+
+  // Redirect root to dashboard only if logged in
+  if (pathname === '/') {
+    if (token) {
+      return NextResponse.redirect(new URL('/dashboard', request.url));
+    }
     return NextResponse.next();
   }
 

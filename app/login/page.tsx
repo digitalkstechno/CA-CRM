@@ -22,7 +22,7 @@ export default function LoginPage() {
     setLoading(true);
     const ok = await login(form.username.trim(), form.password);
     if (ok) {
-      router.replace('/');
+      router.replace('/dashboard');
     } else {
       setError('Invalid email or password.');
       setLoading(false);

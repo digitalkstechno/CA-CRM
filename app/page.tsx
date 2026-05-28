@@ -1,165 +1,1026 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
-import { DashboardStats } from '@/components/DashboardStats';
-import { motion } from 'motion/react';
-import { Users, ArrowRight, FileText, UserPlus, Shield } from 'lucide-react';
+import React, { useState, useEffect, useRef } from 'react';
+import { motion, AnimatePresence, useScroll, useTransform, useInView } from 'motion/react';
+import {
+  Shield, Zap, Globe, MessageSquare, CheckCircle2,
+  ArrowRight, Play, Check, X, Menu, Phone,
+  ChevronDown, Star, Clock, Award, Users,
+  Send, Paperclip, Smile, Search, Download,
+  FileText, BarChart3, Receipt, Database,
+  LayoutDashboard, Lock
+} from 'lucide-react';
 import Link from 'next/link';
-import { api } from '@/lib/api';
 import { cn } from '@/lib/utils';
+import { Inter } from 'next/font/google';
 
-type Client = {
-  _id: string;
-  name: string;
-  email: string;
-  phone: string;
-  paymentStatus: 'CLEAR' | 'PENDING';
-  serviceEnabled: boolean;
-  createdAt: string;
-  documents: any[];
-  familyMembers: any[];
-};
+const inter = Inter({ subsets: ['latin'] });
 
-export default function DashboardPage() {
-  const [clients, setClients] = useState<Client[]>([]);
+// --- Components ---
+
+const Logo = ({ className }: { className?: string }) => (
+  <div className={cn("flex items-center gap-2", className)}>
+    <div className="relative">
+      <div className="w-10 h-10 bg-[#0A1628] rounded-full flex items-center justify-center font-bold text-white text-sm">
+        CA
+      </div>
+      <div className="absolute -bottom-1 -right-1 w-5 h-5 bg-[#25D366] rounded-full flex items-center justify-center border-2 border-white">
+        <svg viewBox="0 0 24 24" className="w-3 h-3 fill-white">
+          <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-4.821 4.766c-1.21 0-2.397-.325-3.433-.94l-.246-.146-2.552.67.682-2.488-.16-.255a8.12 8.12 0 01-1.248-4.322c0-4.486 3.652-8.138 8.139-8.138 2.173 0 4.218.847 5.753 2.384 1.536 1.536 2.383 3.58 2.383 5.754 0 4.488-3.651 8.14-8.139 8.14m0-17.616c-5.232 0-9.488 4.256-9.488 9.489 0 1.673.437 3.306 1.267 4.745L3.182 20.47l4.026-1.056c1.393.759 2.96 1.159 4.561 1.159 5.234 0 9.49-4.256 9.49-9.489 0-2.527-.984-4.903-2.771-6.69s-4.163-2.771-6.691-2.771" />
+        </svg>
+      </div>
+    </div>
+    <span className="text-xl font-bold text-[#0A1628] tracking-tight">CA Flow</span>
+  </div>
+);
+
+const Navbar = () => {
+  const [isScrolled, setIsScrolled] = useState(false);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   useEffect(() => {
-    const fetchClients = async () => {
-      try {
-        const data = await api.get('/clients?limit=20');
-        setClients(data.clients || []);
-      } catch (error) {
-        // silent fail
-      }
-    };
-    fetchClients();
+    const handleScroll = () => setIsScrolled(window.scrollY > 20);
+    window.addEventListener('scroll', handleScroll);
+    return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
-  const recent = [...clients].reverse().slice(0, 5);
-  const clearClients = clients.filter(c => c.paymentStatus === 'CLEAR');
+  const navLinks = [
+    { name: 'Features', href: '#features' },
+    { name: 'How It Works', href: '#how-it-works' },
+    { name: 'Demo', href: '#demo' },
+    { name: 'Pricing', href: '#pricing' },
+    { name: 'Testimonials', href: '#testimonials' },
+  ];
 
   return (
-    <div className="max-w-7xl mx-auto space-y-10">
-      <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
-        <div>
-          <h2 className="text-3xl font-bold text-slate-900 tracking-tight">Dashboard</h2>
-          <p className="text-slate-400 font-bold mt-2 tracking-wide uppercase text-[10px]">System Overview • {new Date().toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}</p>
+    <motion.nav
+      initial={{ y: -100 }}
+      animate={{ y: 0 }}
+      className={cn(
+        "fixed top-0 left-0 right-0 z-[100] transition-all duration-300 px-6 py-4",
+        isScrolled ? "bg-white/80 backdrop-blur-md shadow-md py-3" : "bg-transparent"
+      )}
+    >
+      <div className="max-w-7xl mx-auto flex items-center justify-between">
+        <Logo />
+
+        {/* Desktop Nav */}
+        <div className="hidden md:flex items-center gap-8">
+          {navLinks.map((link) => (
+            <a key={link.name} href={link.href} className="text-sm font-semibold text-[#0A1628]/70 hover:text-[#0A1628] transition-colors">
+              {link.name}
+            </a>
+          ))}
         </div>
-        <div className="flex items-center gap-3">
-          <Link href="/clients" className="bg-white border border-slate-200 px-6 py-2.5 rounded-xl font-bold text-sm text-slate-600 hover:bg-slate-50 transition-all shadow-sm">
-            Manage Clients
+
+        <div className="hidden md:flex items-center gap-4">
+          <Link href="/login" className="text-sm font-bold text-[#0A1628] px-4 py-2 hover:bg-slate-100 rounded-full transition-all">
+            Login
           </Link>
-          <Link href="/clients?add=true" className="bg-blue-600 px-6 py-2.5 rounded-xl font-bold text-sm text-white hover:bg-blue-700 transition-all shadow-lg shadow-blue-100">
-            Add New Client
+          <Link href="/login" className="bg-[#16A34A] hover:bg-[#15803d] text-white px-6 py-2.5 rounded-full font-bold text-sm shadow-lg shadow-green-100 transition-all flex items-center gap-2 group">
+            Get Started Free
+            <ArrowRight size={16} className="group-hover:translate-x-1 transition-transform" />
           </Link>
         </div>
+
+        {/* Mobile Menu Toggle */}
+        <button className="md:hidden p-2 text-[#0A1628]" onClick={() => setMobileMenuOpen(!mobileMenuOpen)}>
+          <Menu size={24} />
+        </button>
       </div>
 
-      <DashboardStats clients={clients} />
-
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-        {/* Recent Clients */}
-        <div className="lg:col-span-2 bg-white rounded-3xl border border-slate-100 shadow-sm p-8 overflow-hidden relative">
-          <div className="absolute top-0 right-0 p-10 opacity-[0.03] pointer-events-none">
-            <Users size={120} />
-          </div>
-
-          <div className="flex items-center justify-between mb-8 relative z-10">
-            <div>
-              <h3 className="text-xl font-bold text-slate-900">Recent Clients</h3>
-              <p className="text-slate-400 text-sm font-medium mt-1">Latest activity in your database</p>
-            </div>
-            <Link href="/clients" className="bg-slate-50 text-slate-400 p-2 rounded-xl hover:text-blue-600 hover:bg-blue-50 transition-all group">
-              <ArrowRight size={20} className="group-hover:translate-x-1 transition-transform" />
-            </Link>
-          </div>
-
-          <div className="space-y-2 relative z-10">
-            {recent.length === 0 && (
-              <div className="text-center py-20 bg-slate-50/50 rounded-2xl border-2 border-dashed border-slate-100">
-                <p className="text-slate-400 font-bold">No clients found yet.</p>
-                <Link href="/clients" className="text-blue-600 font-bold text-sm mt-3 inline-block hover:underline">Start by adding a client</Link>
+      {/* Mobile Drawer */}
+      <AnimatePresence>
+        {mobileMenuOpen && (
+          <motion.div
+            initial={{ height: 0, opacity: 0 }}
+            animate={{ height: 'auto', opacity: 1 }}
+            exit={{ height: 0, opacity: 0 }}
+            className="md:hidden bg-white mt-4 rounded-3xl overflow-hidden shadow-xl border border-slate-100"
+          >
+            <div className="p-6 flex flex-col gap-4">
+              {navLinks.map((link) => (
+                <a key={link.name} href={link.href} className="text-base font-bold text-[#0A1628]/70 py-2 border-b border-slate-50" onClick={() => setMobileMenuOpen(false)}>
+                  {link.name}
+                </a>
+              ))}
+              <div className="pt-4 flex flex-col gap-3">
+                <Link href="/login" className="w-full text-center py-3 font-bold text-[#0A1628]">Login</Link>
+                <Link href="/login" className="w-full text-center py-4 bg-[#16A34A] text-white rounded-2xl font-bold">Get Started Free</Link>
               </div>
-            )}
-            {recent.map((client, i) => {
-              const totalDocs = client.documents.length + client.familyMembers.reduce((a, m) => a + m.documents.length, 0);
-              return (
-                <motion.div
-                  key={client._id}
-                  initial={{ opacity: 0, y: 10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: i * 0.05 }}
-                >
-                  <Link href={`/clients/${client._id}`} className="flex items-center gap-5 p-4 rounded-2xl hover:bg-slate-50 transition-all duration-300 group border border-transparent hover:border-slate-100">
-                    <div className="w-12 h-12 rounded-xl bg-slate-50 flex items-center justify-center text-slate-900 font-bold text-lg group-hover:bg-blue-600 group-hover:text-white transition-all duration-300 shadow-sm">
-                      {client.name.charAt(0)}
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <p className="font-bold text-slate-900 text-base tracking-tight group-hover:text-blue-600 transition-colors">{client.name}</p>
-                      <p className="text-xs font-semibold text-slate-400 tracking-tight mt-0.5">{client.phone}</p>
-                    </div>
-                    <div className="flex items-center gap-6">
-                      <div className="hidden sm:flex flex-col items-end gap-1">
-                        <span className="flex items-center gap-1.5 text-xs font-bold text-slate-400">
-                          <UserPlus size={14} className="text-slate-300" /> {client.familyMembers.length} members
-                        </span>
-                        <span className="flex items-center gap-1.5 text-xs font-bold text-slate-400">
-                          <FileText size={14} className="text-slate-300" /> {totalDocs} docs
-                        </span>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </motion.nav>
+  );
+};
+
+const WhatsAppDemoPhone = () => {
+  const [messages, setMessages] = useState<any[]>([]);
+  const [step, setStep] = useState(0);
+
+  const script = [
+    { type: 'client', text: 'Mujhe GST Report chahiye' },
+    { type: 'bot', text: 'Sure! Aapka GST Report taiyar hai 📄' },
+    {
+      type: 'bot',
+      isDocs: true,
+      docs: [
+        { name: 'GST Report.pdf', size: '245 KB' },
+        { name: 'ITR Copy.pdf', size: '180 KB' },
+        { name: 'Balance Sheet.pdf', size: '1.2 MB' },
+        { name: 'Tax Invoice.pdf', size: '45 KB' }
+      ]
+    },
+    { type: 'client', text: 'Thank you! Bahut fast hai 🙏' }
+  ];
+
+  useEffect(() => {
+    const timer = setInterval(() => {
+      if (step < script.length) {
+        setMessages(prev => [...prev, script[step]]);
+        setStep(prev => prev + 1);
+      } else {
+        setTimeout(() => {
+          setMessages([]);
+          setStep(0);
+        }, 3000);
+      }
+    }, 1500);
+    return () => clearInterval(timer);
+  }, [step]);
+
+  return (
+    <div className="relative mx-auto w-full max-w-[300px]">
+      {/* Floating Pills */}
+      <motion.div
+        animate={{ y: [0, -10, 0] }}
+        transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }}
+        className="absolute -top-10 -right-8 bg-white shadow-xl px-4 py-2 rounded-full border border-slate-100 flex items-center gap-2 z-20 pointer-events-none"
+      >
+        <span className="text-lg">🛡️</span>
+        <span className="text-xs font-bold text-[#0A1628]">Secure & Safe</span>
+      </motion.div>
+      <motion.div
+        animate={{ y: [0, 8, 0] }}
+        transition={{ duration: 3.5, repeat: Infinity, ease: "easeInOut", delay: 0.5 }}
+        className="absolute top-1/2 -right-12 bg-white shadow-xl px-4 py-2 rounded-full border border-slate-100 flex items-center gap-2 z-20 pointer-events-none"
+      >
+        <span className="text-lg">⚡</span>
+        <span className="text-xs font-bold text-[#0A1628]">Instant Delivery</span>
+      </motion.div>
+      <motion.div
+        animate={{ y: [0, -12, 0] }}
+        transition={{ duration: 5, repeat: Infinity, ease: "easeInOut", delay: 1 }}
+        className="absolute -bottom-8 -right-4 bg-white shadow-xl px-4 py-2 rounded-full border border-slate-100 flex items-center gap-2 z-20 pointer-events-none"
+      >
+        <span className="text-lg">☁️</span>
+        <span className="text-xs font-bold text-[#0A1628]">24x7 Access</span>
+      </motion.div>
+      <motion.div
+        animate={{ y: [0, 10, 0] }}
+        transition={{ duration: 4.5, repeat: Infinity, ease: "easeInOut", delay: 1.5 }}
+        className="absolute -top-4 -left-12 bg-white shadow-xl px-4 py-2 rounded-full border border-slate-100 flex items-center gap-2 z-20 pointer-events-none"
+      >
+        <span className="text-lg">😊</span>
+        <span className="text-xs font-bold text-[#0A1628]">Happy Clients</span>
+      </motion.div>
+
+      {/* Phone Body */}
+      <div className="relative bg-[#0A1628] rounded-[3rem] p-3 shadow-2xl overflow-hidden border-[8px] border-[#0A1628]">
+        {/* Screen */}
+        <div className="bg-[#ECE5DD] h-[520px] rounded-[2.2rem] flex flex-col overflow-hidden relative">
+          {/* Header */}
+          <div className="bg-[#075E54] p-4 flex items-center gap-3">
+            <div className="w-10 h-10 rounded-full bg-slate-200 flex-shrink-0">
+              <div className="w-full h-full bg-[#0A1628] rounded-full flex items-center justify-center font-bold text-white text-[10px]">CA</div>
+            </div>
+            <div className="flex-1">
+              <h4 className="text-white text-sm font-bold leading-tight">CA Flow <span className="text-[10px] bg-white/20 px-1 rounded">✓</span></h4>
+              <div className="flex items-center gap-1.5">
+                <div className="w-1.5 h-1.5 bg-[#25D366] rounded-full animate-pulse" />
+                <span className="text-white/80 text-[10px]">Online</span>
+              </div>
+            </div>
+          </div>
+
+          {/* Messages Area */}
+          <div className="flex-1 p-3 overflow-y-auto space-y-3 custom-scrollbar">
+            {messages.map((m, i) => (
+              <motion.div
+                key={i}
+                initial={{ opacity: 0, scale: 0.8, x: m.type === 'client' ? 20 : -20 }}
+                animate={{ opacity: 1, scale: 1, x: 0 }}
+                className={cn(
+                  "flex flex-col max-w-[85%]",
+                  m.type === 'client' ? "ml-auto items-end" : "mr-auto"
+                )}
+              >
+                {m.isDocs ? (
+                  <div className="grid grid-cols-2 gap-1.5">
+                    {m.docs.map((doc: any, j: number) => (
+                      <div key={j} className="bg-white p-2 rounded-xl shadow-sm border border-slate-200">
+                        <div className="flex items-center gap-2 mb-1">
+                          <div className="text-red-500"><FileText size={16} /></div>
+                          <span className="text-[9px] font-bold text-slate-800 truncate">{doc.name}</span>
+                        </div>
+                        <div className="flex items-center justify-between">
+                          <span className="text-[8px] text-slate-400">{doc.size}</span>
+                          <div className="text-[#16A34A]"><Download size={10} /></div>
+                        </div>
                       </div>
-                      <div className={cn(
-                        "px-3 py-1 rounded-lg font-bold text-[10px] tracking-tight border",
-                        client.paymentStatus === 'CLEAR'
-                          ? 'bg-emerald-50 text-emerald-600 border-emerald-100'
-                          : 'bg-rose-50 text-rose-500 border-rose-100'
-                      )}>
-                        {client.paymentStatus}
-                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className={cn(
+                    "p-2.5 rounded-2xl text-xs font-medium shadow-sm",
+                    m.type === 'client'
+                      ? "bg-[#DCF8C6] text-slate-800 rounded-tr-none"
+                      : "bg-white text-slate-800 rounded-tl-none"
+                  )}>
+                    {m.text}
+                    <div className="flex justify-end items-center gap-1 mt-1">
+                      <span className="text-[8px] text-slate-400">10:45 AM</span>
+                      {m.type === 'client' && <div className="text-blue-500 font-bold">✓✓</div>}
                     </div>
-                  </Link>
-                </motion.div>
-              );
-            })}
+                  </div>
+                )}
+              </motion.div>
+            ))}
+          </div>
+
+          {/* Input Bar */}
+          <div className="bg-white p-2 flex items-center gap-2 border-t border-slate-200">
+            <div className="bg-slate-100 rounded-full h-8 flex-1 flex items-center px-3">
+              <span className="text-[10px] text-slate-400">Type a message...</span>
+            </div>
+            <div className="w-8 h-8 rounded-full bg-[#16A34A] flex items-center justify-center text-white">
+              <Send size={14} fill="currentColor" />
+            </div>
           </div>
         </div>
+      </div>
+    </div>
+  );
+};
 
-        {/* Right Panel */}
-        <div className="space-y-8">
-          <div className="bg-white rounded-3xl border border-slate-100 shadow-sm p-8">
-            <div className="flex items-center justify-between mb-8">
-              <h3 className="font-bold text-lg text-slate-900">Verified Clients</h3>
-              <div className="p-2 bg-emerald-50 text-emerald-600 rounded-xl">
-                <Shield size={18} />
-              </div>
-            </div>
+const ScrollingLogos = () => {
+  const logos = ["Sharma & Associates", "Mehta CA Firm", "Patel Consultants", "Gupta & Co.", "Joshi Tax Services"];
+  const doubleLogos = [...logos, ...logos, ...logos];
 
-            {clearClients.length === 0 ? (
-              <div className="py-20 text-center px-4 bg-slate-50/50 rounded-2xl border-2 border-dashed border-slate-100">
-                <p className="text-sm font-bold text-slate-300 italic">No clear payments recorded.</p>
+  return (
+    <div className="bg-[#F8FAFC] py-8 border-y border-slate-100 overflow-hidden">
+      <div className="max-w-7xl mx-auto px-6">
+        <p className="text-center text-slate-400 text-xs font-bold uppercase tracking-widest mb-6">Trusted by 500+ CA firms across India</p>
+        <div className="relative flex overflow-hidden">
+          <motion.div
+            animate={{ x: [0, -1000] }}
+            transition={{ duration: 30, repeat: Infinity, ease: "linear" }}
+            className="flex gap-12 whitespace-nowrap"
+          >
+            {doubleLogos.map((logo, i) => (
+              <span key={i} className="text-2xl font-black text-slate-200 uppercase tracking-tighter hover:text-slate-400 transition-colors cursor-default">
+                {logo}
+              </span>
+            ))}
+          </motion.div>
+        </div>
+        <div className="flex justify-center items-center gap-2 mt-8">
+          <div className="flex text-amber-400">
+            {[...Array(5)].map((_, i) => <Star key={i} size={16} fill="currentColor" />)}
+          </div>
+          <span className="text-sm font-bold text-slate-500">4.9/5 from 200+ reviews</span>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+const StepsSection = () => {
+  const steps = [
+    { icon: "💬", title: "Client Sends a Message", desc: "Client types the document name on WhatsApp — no app to install, no login needed" },
+    { icon: "⚙️", title: "CA Flow Processes Request", desc: "Our AI reads the message, identifies the document, and fetches it from your secure vault" },
+    { icon: "📁", title: "Document is Fetched", desc: "The exact file — GST report, ITR, balance sheet — is retrieved and prepared for delivery" },
+    { icon: "📲", title: "Instant WhatsApp Delivery", desc: "The document is sent back to the client on WhatsApp in seconds, with a delivery receipt" },
+  ];
+
+  return (
+    <div id="how-it-works" className="py-24 bg-white relative overflow-hidden">
+      <div className="absolute top-0 right-0 w-1/2 h-1/2 bg-blue-50/50 blur-[120px] rounded-full -z-10" />
+      <div className="max-w-7xl mx-auto px-6">
+        <div className="text-center mb-16">
+          <h2 className="text-4xl md:text-5xl font-black text-[#0A1628] mb-4">Simple. Automated. Brilliant.</h2>
+          <p className="text-slate-500 font-medium text-lg">4 steps from client request to document delivery — in under 10 seconds</p>
+        </div>
+
+        <div className="grid md:grid-cols-4 gap-8 relative">
+          {/* Connector Line (Desktop) */}
+          <div className="hidden md:block absolute top-[60px] left-[10%] right-[10%] h-1 border-t-2 border-dashed border-slate-100 -z-10">
+            <motion.div
+              initial={{ width: 0 }}
+              whileInView={{ width: '100%' }}
+              transition={{ duration: 2 }}
+              className="h-full bg-[#16A34A]/20"
+            />
+          </div>
+
+          {steps.map((step, i) => (
+            <motion.div
+              key={i}
+              whileHover={{ y: -5 }}
+              className="bg-white p-8 rounded-[2.5rem] border border-slate-50 shadow-sm hover:shadow-xl hover:border-green-100 transition-all group"
+            >
+              <div className="w-16 h-16 rounded-3xl bg-slate-50 flex items-center justify-center text-3xl mb-6 relative group-hover:bg-green-50 transition-colors">
+                {step.icon}
+                <div className="absolute -top-2 -right-2 w-7 h-7 bg-[#0A1628] rounded-full flex items-center justify-center text-white text-[10px] font-bold">
+                  {i + 1}
+                </div>
               </div>
-            ) : (
-              <div className="space-y-4">
-                {clearClients.slice(0, 8).map(c => (
-                  <Link key={c._id} href={`/clients/${c._id}`} className="flex items-center gap-4 hover:bg-slate-50 rounded-xl p-2 transition-all group">
-                    <div className="w-10 h-10 rounded-lg bg-slate-50 flex items-center justify-center text-slate-500 font-bold text-xs group-hover:bg-emerald-100 group-hover:text-emerald-700 transition-colors">
-                      {c.name.charAt(0)}
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <p className="text-sm font-bold text-slate-900 truncate group-hover:text-emerald-700 transition-colors">{c.name}</p>
-                      <p className="text-[10px] font-bold text-slate-400 mt-0.5">{c.documents.length + c.familyMembers.reduce((a, m) => a + m.documents.length, 0)} files stored</p>
-                    </div>
-                  </Link>
+              <h4 className="text-xl font-bold text-[#0A1628] mb-3 leading-tight">{step.title}</h4>
+              <p className="text-slate-500 text-sm font-medium leading-relaxed">{step.desc}</p>
+            </motion.div>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+};
+
+const WhatsAppSimulator = () => {
+  const [messages, setMessages] = useState<any[]>([
+    { type: 'bot', text: 'Namaste! Main CA Flow hoon. Kaunsa document chahiye aapko? 😊' }
+  ]);
+  const [isTyping, setIsTyping] = useState(false);
+  const scrollRef = useRef<HTMLDivElement>(null);
+
+  const chips = [
+    "GST Report maangna hai",
+    "ITR Copy chahiye",
+    "Balance Sheet bhejo",
+    "Tax Invoice do"
+  ];
+
+  const responseMap: Record<string, string[]> = {
+    "gst": ["GST Report Q3 2024.pdf", "GST Filing Summary.pdf"],
+    "itr": ["ITR Copy AY2024-25.pdf"],
+    "balance": ["Balance Sheet FY2024.pdf", "P&L Statement.pdf"],
+    "invoice": ["Tax Invoice #1042.pdf", "Tax Invoice #1043.pdf"],
+    "default": ["CA Flow Document.pdf"]
+  };
+
+  const handleSend = async (text: string) => {
+    if (!text.trim() || isTyping) return;
+
+    setMessages(prev => [...prev, { type: 'client', text }]);
+    setIsTyping(true);
+
+    // Simulate thinking
+    await new Promise(r => setTimeout(r, 1500));
+    setIsTyping(false);
+
+    const lower = text.toLowerCase();
+    let keyword = "default";
+    if (lower.includes("gst")) keyword = "gst";
+    else if (lower.includes("itr")) keyword = "itr";
+    else if (lower.includes("balance") || lower.includes("sheet")) keyword = "balance";
+    else if (lower.includes("invoice")) keyword = "invoice";
+
+    if (keyword === "default" && !lower.includes("hello") && !lower.includes("hi")) {
+      setMessages(prev => [...prev, { type: 'bot', text: 'Ek second... main aapka document dhundh raha hoon 🔍' }]);
+      await new Promise(r => setTimeout(r, 1000));
+    }
+
+    const files = responseMap[keyword];
+    setMessages(prev => [
+      ...prev,
+      { type: 'bot', text: `Sure! Aapka ${keyword.toUpperCase()} taiyar hai ✅` },
+      { type: 'bot', isDocs: true, docs: files.map(f => ({ name: f, size: '245 KB' })) }
+    ]);
+  };
+
+  useEffect(() => {
+    if (scrollRef.current) {
+      scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
+    }
+  }, [messages, isTyping]);
+
+  return (
+    <div id="demo" className="py-24 bg-[#F8FAFC]">
+      <div className="max-w-7xl mx-auto px-6">
+        <div className="text-center mb-16">
+          <h2 className="text-4xl md:text-5xl font-black text-[#0A1628] mb-4">See CA Flow in Action — Live</h2>
+          <p className="text-slate-500 font-medium text-lg">Type a document request below just like your client would on WhatsApp</p>
+        </div>
+
+        <div className="max-w-[480px] mx-auto">
+          <div className="bg-[#0A1628] rounded-[3rem] p-4 shadow-2xl border-4 border-[#16A34A]/30 relative">
+            {/* WhatsApp Interface */}
+            <div className="bg-[#ECE5DD] h-[580px] rounded-[2rem] overflow-hidden flex flex-col">
+              {/* Header */}
+              <div className="bg-[#075E54] p-4 flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-full bg-slate-200 overflow-hidden flex items-center justify-center font-bold text-[#0A1628]">CA</div>
+                  <div className="text-white">
+                    <p className="font-bold text-sm flex items-center gap-1">CA Flow <span className="text-[10px] bg-[#25D366] rounded-full p-0.5"><Check size={8} className="text-white" /></span></p>
+                    <span className="text-[10px] flex items-center gap-1"><div className="w-1 h-1 bg-[#25D366] rounded-full" /> Online</span>
+                  </div>
+                </div>
+                <div className="flex gap-4 text-white/80">
+                  <Phone size={18} />
+                  <ChevronDown size={18} />
+                </div>
+              </div>
+
+              {/* Chat Area */}
+              <div ref={scrollRef} className="flex-1 p-4 overflow-y-auto space-y-4 custom-scrollbar-thin">
+                {messages.map((m, i) => (
+                  <motion.div
+                    key={i}
+                    initial={{ opacity: 0, y: 10, scale: 0.95 }}
+                    animate={{ opacity: 1, y: 0, scale: 1 }}
+                    className={cn("flex flex-col", m.type === 'client' ? "items-end" : "items-start")}
+                  >
+                    {m.isDocs ? (
+                      <div className="space-y-2 w-full max-w-[80%]">
+                        {m.docs.map((doc: any, j: number) => (
+                          <div key={j} className="bg-white p-3 rounded-2xl shadow-sm border border-slate-100 flex items-center gap-3">
+                            <div className="p-2 bg-rose-50 text-rose-500 rounded-xl"><FileText size={20} /></div>
+                            <div className="flex-1 min-w-0">
+                              <p className="text-xs font-bold text-slate-800 truncate">{doc.name}</p>
+                              <p className="text-[10px] text-slate-400">{doc.size}</p>
+                            </div>
+                            <button className="p-2 text-[#16A34A] hover:bg-green-50 rounded-full"><Download size={18} /></button>
+                          </div>
+                        ))}
+                      </div>
+                    ) : (
+                      <div className={cn(
+                        "p-3 rounded-2xl text-sm font-medium shadow-sm max-w-[85%]",
+                        m.type === 'client' ? "bg-[#DCF8C6] rounded-tr-none" : "bg-white rounded-tl-none"
+                      )}>
+                        {m.text}
+                        <div className="text-[9px] text-slate-400 text-right mt-1">10:45 AM</div>
+                      </div>
+                    )}
+                  </motion.div>
                 ))}
-                {clearClients.length > 8 && (
-                  <Link href="/clients" className="text-xs text-blue-600 font-bold hover:underline block text-center pt-4 tracking-tight">
-                    View all {clearClients.length} verified clients
-                  </Link>
+                {isTyping && (
+                  <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="flex items-center gap-2 bg-white px-3 py-2 rounded-2xl w-fit">
+                    <div className="flex gap-1">
+                      <div className="w-1.5 h-1.5 bg-slate-300 rounded-full animate-bounce" style={{ animationDelay: '0s' }} />
+                      <div className="w-1.5 h-1.5 bg-slate-300 rounded-full animate-bounce" style={{ animationDelay: '0.2s' }} />
+                      <div className="w-1.5 h-1.5 bg-slate-300 rounded-full animate-bounce" style={{ animationDelay: '0.4s' }} />
+                    </div>
+                  </motion.div>
                 )}
               </div>
-            )}
+
+              {/* Bottom UI */}
+              <div className="bg-white p-4">
+                <div className="flex gap-2 overflow-x-auto pb-4 no-scrollbar">
+                  {chips.map(chip => (
+                    <button
+                      key={chip}
+                      onClick={() => handleSend(chip)}
+                      className="whitespace-nowrap bg-slate-50 border border-slate-100 px-4 py-2 rounded-full text-xs font-bold text-slate-600 hover:bg-[#16A34A]/10 hover:border-[#16A34A]/30 transition-all"
+                    >
+                      {chip}
+                    </button>
+                  ))}
+                </div>
+                <div className="flex items-center gap-3">
+                  <div className="flex-1 bg-slate-50 border border-slate-100 rounded-full px-4 py-3 flex items-center justify-between">
+                    <input
+                      placeholder="Type a message..."
+                      className="bg-transparent text-sm outline-none w-full"
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter') {
+                          handleSend(e.currentTarget.value);
+                          e.currentTarget.value = '';
+                        }
+                      }}
+                    />
+                    <div className="flex gap-3 text-slate-400">
+                      <Paperclip size={18} />
+                      <Smile size={18} />
+                    </div>
+                  </div>
+                  <button className="w-12 h-12 bg-[#16A34A] rounded-full flex items-center justify-center text-white shadow-lg shadow-green-100">
+                    <Send size={20} fill="currentColor" />
+                  </button>
+                </div>
+              </div>
+            </div>
+            {/* Clear Button */}
+            <button
+              onClick={() => {
+                setMessages([{ type: 'bot', text: 'Namaste! Main CA Flow hoon. Kaunsa document chahiye aapko? 😊' }]);
+                setIsTyping(false);
+              }}
+              className="absolute -bottom-16 left-1/2 -translate-x-1/2 text-slate-400 font-bold text-xs hover:text-[#0A1628] uppercase tracking-widest transition-colors"
+            >
+              Clear Chat
+            </button>
           </div>
         </div>
       </div>
+    </div>
+  );
+};
+
+const PricingSection = () => {
+  const [isYearly, setIsYearly] = useState(false);
+
+  const plans = [
+    {
+      name: "Starter",
+      price: isYearly ? "799" : "999",
+      features: ["Up to 50 Clients", "500 Documents/mo", "WhatsApp Bot", "Email Support"],
+      cta: "Start Free",
+      popular: false
+    },
+    {
+      name: "Pro",
+      price: isYearly ? "1,999" : "2,499",
+      features: ["Up to 200 Clients", "5,000 Documents/mo", "WhatsApp Bot", "Full Audit Trail", "Custom Branding"],
+      cta: "Start Free",
+      popular: true
+    },
+    {
+      name: "Enterprise",
+      price: "Custom",
+      features: ["Unlimited Clients", "Unlimited Documents", "WhatsApp Bot", "Priority Support", "Dedicated Manager", "SLA Guarantee"],
+      cta: "Contact Us",
+      popular: false
+    }
+  ];
+
+  return (
+    <div id="pricing" className="py-24 bg-white">
+      <div className="max-w-7xl mx-auto px-6">
+        <div className="text-center mb-16">
+          <h2 className="text-4xl md:text-5xl font-black text-[#0A1628] mb-6">Simple, Transparent Pricing</h2>
+
+          <div className="flex items-center justify-center gap-4">
+            <span className={cn("text-sm font-bold", !isYearly ? "text-[#0A1628]" : "text-slate-400")}>Monthly</span>
+            <button
+              onClick={() => setIsYearly(!isYearly)}
+              className="w-14 h-7 bg-slate-100 rounded-full relative transition-colors p-1"
+            >
+              <motion.div
+                animate={{ x: isYearly ? 28 : 0 }}
+                className="w-5 h-5 bg-[#16A34A] rounded-full shadow-sm"
+              />
+            </button>
+            <span className={cn("text-sm font-bold flex items-center gap-2", isYearly ? "text-[#0A1628]" : "text-slate-400")}>
+              Yearly <span className="text-[10px] bg-emerald-50 text-emerald-600 px-2 py-0.5 rounded-full border border-emerald-100">20% OFF</span>
+            </span>
+          </div>
+        </div>
+
+        <div className="grid md:grid-cols-3 gap-8 items-end">
+          {plans.map((plan, i) => (
+            <div
+              key={plan.name}
+              className={cn(
+                "p-10 rounded-[2.5rem] border transition-all duration-500",
+                plan.popular
+                  ? "bg-[#0A1628] border-[#0A1628] shadow-2xl scale-105 relative z-10 text-white"
+                  : "bg-white border-slate-100 hover:border-slate-300 text-slate-800"
+              )}
+            >
+              {plan.popular && (
+                <div className="absolute -top-4 left-1/2 -translate-x-1/2 bg-[#16A34A] text-white text-[10px] font-black uppercase tracking-widest px-4 py-1.5 rounded-full">
+                  Most Popular
+                </div>
+              )}
+              <h3 className="text-xl font-bold mb-2 uppercase tracking-widest text-[#16A34A]">{plan.name}</h3>
+              <div className="flex items-baseline gap-1 mb-8">
+                <span className="text-4xl md:text-5xl font-black">{plan.price === 'Custom' ? '' : '₹'}{plan.price}</span>
+                {plan.price !== 'Custom' && <span className="text-sm font-medium opacity-60">/mo</span>}
+              </div>
+              <div className="space-y-4 mb-10">
+                {plan.features.map(f => (
+                  <div key={f} className="flex items-center gap-3">
+                    <div className={cn("w-5 h-5 rounded-full flex items-center justify-center shrink-0", plan.popular ? "bg-[#16A34A]/20" : "bg-green-50")}>
+                      <Check size={12} className="text-[#16A34A]" />
+                    </div>
+                    <span className="text-sm font-semibold opacity-90">{f}</span>
+                  </div>
+                ))}
+                {!plan.name.includes('Starter') && plan.name.includes('Starter') && (
+                  <div className="flex items-center gap-3 opacity-30">
+                    <X size={16} />
+                    <span className="text-sm font-semibold">Audit Trail</span>
+                  </div>
+                )}
+              </div>
+              <Link
+                href="/login"
+                className={cn(
+                  "block w-full text-center py-4 rounded-2xl font-black text-sm transition-all",
+                  plan.popular
+                    ? "bg-[#16A34A] text-white hover:bg-[#15803d]"
+                    : "bg-slate-50 text-slate-800 hover:bg-slate-100 border border-slate-100"
+                )}
+              >
+                {plan.cta}
+              </Link>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+};
+
+const FAQSection = () => {
+  const [openIdx, setOpenIdx] = useState<number | null>(0);
+  const faqs = [
+    { q: "Do clients need to install any app?", a: "No, clients use WhatsApp which they already have. They just send a message to your verified business number." },
+    { q: "How are documents stored securely?", a: "We use bank-grade 256-bit AES encryption. Documents are stored in a secure cloud vault, and only verified clients can access their own data." },
+    { q: "Can I use my existing WhatsApp number?", a: "Yes, we can help you onboard your existing official number to the WhatsApp Business API for CA Flow." },
+    { q: "What document formats are supported?", a: "PDF, JPG, PNG, Excel, and more. Most common requested files like ITR, Balance Sheets, and GST reports are typically shared as PDFs." },
+    { q: "Is there a free trial?", a: "Absolutely! Get 14 days of free access with all Pro features to see how your clients love it." },
+    { q: "How long does setup take?", a: "Our team handles the setup. It usually takes under 10 minutes to upload your first set of client documents and go live." }
+  ];
+
+  return (
+    <div className="py-24 bg-[#F8FAFC]">
+      <div className="max-w-3xl mx-auto px-6">
+        <h2 className="text-3xl font-black text-[#0A1628] mb-12 text-center tracking-tight">Frequently Asked Questions</h2>
+        <div className="space-y-4">
+          {faqs.map((faq, i) => (
+            <div key={i} className="bg-white rounded-3xl border border-slate-100 overflow-hidden transition-all">
+              <button
+                onClick={() => setOpenIdx(openIdx === i ? null : i)}
+                className="w-full p-6 text-left flex items-center justify-between group"
+              >
+                <span className={cn("font-bold transition-colors", openIdx === i ? "text-[#16A34A]" : "text-[#0A1628]")}>{faq.q}</span>
+                <div className={cn("transition-transform duration-300", openIdx === i ? "rotate-180 text-[#16A34A]" : "text-slate-400 group-hover:text-slate-900")}>
+                  <ChevronDown size={20} />
+                </div>
+              </button>
+              <AnimatePresence>
+                {openIdx === i && (
+                  <motion.div
+                    initial={{ height: 0, opacity: 0 }}
+                    animate={{ height: 'auto', opacity: 1 }}
+                    exit={{ height: 0, opacity: 0 }}
+                  >
+                    <div className="px-6 pb-6 text-slate-500 text-sm font-medium leading-relaxed">
+                      {faq.a}
+                    </div>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+};
+
+// --- Page Component ---
+
+export default function LandingPage() {
+  return (
+    <div className={cn("min-h-screen bg-slate-50 overflow-x-hidden", inter.className)}>
+      <Navbar />
+
+      {/* Hero Section */}
+      <section className="relative pt-32 pb-20 md:pt-48 md:pb-32 overflow-hidden px-6">
+        <div className="absolute top-0 left-0 w-full h-full -z-10">
+          <div className="absolute top-[10%] left-[-10%] w-[40%] h-[40%] bg-blue-100 rounded-full blur-[120px] opacity-40 animate-pulse" />
+          <div className="absolute bottom-[10%] right-[-10%] w-[40%] h-[40%] bg-green-100 rounded-full blur-[120px] opacity-40 animate-delay-2000" />
+        </div>
+
+        <div className="max-w-7xl mx-auto grid lg:grid-cols-2 gap-20 items-center">
+          <motion.div
+            initial={{ opacity: 0, x: -50 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ duration: 0.8 }}
+          >
+            <div className="inline-flex items-center gap-2 bg-white border border-slate-100 px-4 py-2 rounded-full shadow-sm mb-8">
+              <span className="relative flex h-2 w-2">
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
+              </span>
+              <span className="text-[10px] font-black text-[#0A1628] uppercase tracking-widest">Now Live — WhatsApp Automation for CA Firms</span>
+            </div>
+
+            <h1 className="text-5xl md:text-7xl font-black text-[#0A1628] leading-[1] tracking-tighter mb-8">
+              "Aapka Client, <br />
+              <span className="text-[#16A34A]">Apne Documents</span>, <br />
+              Jab Chahe, Jahan Chahe!"
+            </h1>
+
+            <p className="text-xl text-slate-500 font-medium leading-relaxed max-w-xl mb-10">
+              Ab aapke clients ko documents ke liye call ya wait karne ki zaroorat nahi. WhatsApp par message bhejo aur apne documents turant pao.
+            </p>
+
+            <div className="flex flex-wrap items-center gap-10 mb-12">
+              <div className="flex flex-col">
+                <span className="text-2xl font-black text-[#0A1628]">500+</span>
+                <span className="text-xs font-bold text-slate-400 uppercase tracking-widest">CA Firms</span>
+              </div>
+              <div className="w-px h-8 bg-slate-200" />
+              <div className="flex flex-col">
+                <span className="text-2xl font-black text-[#0A1628]">50,000+</span>
+                <span className="text-xs font-bold text-slate-400 uppercase tracking-widest">Docs Sent</span>
+              </div>
+              <div className="w-px h-8 bg-slate-200" />
+              <div className="flex flex-col">
+                <span className="text-2xl font-black text-[#0A1628]">4.9★</span>
+                <span className="text-xs font-bold text-slate-400 uppercase tracking-widest">Rating</span>
+              </div>
+            </div>
+
+            <div className="flex flex-col sm:flex-row gap-4">
+              <Link href="/login" className="bg-[#16A34A] hover:bg-[#15803d] text-white px-10 py-5 rounded-2xl font-black text-lg shadow-xl shadow-green-200 transition-all flex items-center justify-center gap-3">
+                Start Free Trial <ArrowRight size={22} />
+              </Link>
+              <button className="bg-white border border-slate-200 text-[#0A1628] px-10 py-5 rounded-2xl font-black text-lg hover:bg-slate-50 transition-all flex items-center justify-center gap-3 group">
+                <div className="w-8 h-8 rounded-full bg-[#0A1628]/5 flex items-center justify-center group-hover:bg-[#0A1628] group-hover:text-white transition-all"><Play size={14} fill="currentColor" /></div>
+                Watch 2-min Demo
+              </button>
+            </div>
+            <p className="mt-6 text-sm font-bold text-slate-400 flex items-center gap-2">
+              <CheckCircle2 size={16} className="text-[#16A34A]" /> No credit card required · Setup in 10 minutes
+            </p>
+          </motion.div>
+
+          <motion.div
+            initial={{ opacity: 0, scale: 0.8 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ duration: 1, delay: 0.2 }}
+            className="relative"
+          >
+            <WhatsAppDemoPhone />
+          </motion.div>
+        </div>
+      </section>
+
+      <ScrollingLogos />
+
+      {/* Problem vs Solution */}
+      <section className="py-24 px-6 overflow-hidden">
+        <div className="max-w-7xl mx-auto">
+          <div className="grid md:grid-cols-2 gap-10">
+            {/* Old Way */}
+            <motion.div
+              whileInView={{ x: [-100, 0], opacity: [0, 1] }}
+              className="bg-white p-10 rounded-[3rem] border border-red-50 relative group hover:border-red-200 transition-all"
+            >
+              <div className="absolute top-6 right-6 text-red-100 group-hover:text-red-500/20 transition-colors">
+                <X size={100} strokeWidth={4} />
+              </div>
+              <h3 className="text-2xl font-black text-slate-900 mb-8 relative z-10">The Old Way <br /><span className="text-red-500">Without CA Flow</span></h3>
+              <div className="space-y-6 relative z-10">
+                {[
+                  "Clients call repeatedly for documents",
+                  "Staff wastes hours on manual sharing",
+                  "Documents sent on personal WhatsApp — no tracking",
+                  "No record of what was shared and when",
+                  "Clients feel frustrated & unprofessional service"
+                ].map((item, i) => (
+                  <div key={i} className="flex gap-4">
+                    <div className="w-6 h-6 rounded-full bg-red-50 flex items-center justify-center shrink-0">
+                      <X size={14} className="text-red-500" />
+                    </div>
+                    <span className="text-slate-500 font-bold">{item}</span>
+                  </div>
+                ))}
+              </div>
+            </motion.div>
+
+            {/* New Way */}
+            <motion.div
+              whileInView={{ x: [100, 0], opacity: [0, 1] }}
+              className="bg-[#0A1628] p-10 rounded-[3rem] border border-green-500/20 relative group hover:border-green-500/50 transition-all text-white shadow-2xl"
+            >
+              <div className="absolute top-6 right-6 text-green-500/10 group-hover:text-green-500/20 transition-colors">
+                <Check size={100} strokeWidth={4} />
+              </div>
+              <h3 className="text-2xl font-black mb-8 relative z-10">The New Way <br /><span className="text-[#16A34A]">With CA Flow</span></h3>
+              <div className="space-y-6 relative z-10">
+                {[
+                  "Clients self-serve documents 24x7 on WhatsApp",
+                  "Zero manual effort from your team",
+                  "Branded, professional document delivery",
+                  "Full audit trail — who got what and when",
+                  "Clients trust your firm more, refer others"
+                ].map((item, i) => (
+                  <div key={i} className="flex gap-4">
+                    <div className="w-6 h-6 rounded-full bg-green-500/20 flex items-center justify-center shrink-0">
+                      <Check size={14} className="text-[#16A34A]" />
+                    </div>
+                    <span className="text-slate-300 font-bold">{item}</span>
+                  </div>
+                ))}
+              </div>
+            </motion.div>
+          </div>
+        </div>
+      </section>
+
+      <StepsSection />
+
+      <WhatsAppSimulator />
+
+      {/* Features Deep Dive */}
+      <section id="features" className="py-24 px-6 bg-white">
+        <div className="max-w-7xl mx-auto">
+          <div className="text-center mb-20">
+            <h2 className="text-4xl md:text-5xl font-black text-[#0A1628] mb-4">Everything Your CA Firm Needs</h2>
+            <p className="text-slate-500 font-medium text-lg">Powerful tools built specifically for professional accounting practices.</p>
+          </div>
+
+          <div className="grid md:grid-cols-3 gap-8">
+            {[
+              { icon: Shield, title: "Bank-Grade Security", desc: "All documents encrypted end-to-end. Only verified clients access their own files.", color: "text-blue-500" },
+              { icon: Zap, title: "Instant Delivery", desc: "From request to receipt in under 10 seconds. No delays, no excuses.", color: "text-amber-500" },
+              { icon: Database, title: "Cloud Document Vault", desc: "Upload once, deliver forever. Organize by client, year, or document type.", color: "text-purple-500" },
+              { icon: BarChart3, title: "Full Audit Trail", desc: "Every document sent is logged — who, what, when. Perfect for compliance.", color: "text-emerald-500" },
+              { icon: MessageSquare, title: "Smart AI Assistant", desc: "Understands natural language requests in Hindi and English both.", color: "text-indigo-500" },
+              { icon: Phone, title: "No App for Clients", desc: "Clients use WhatsApp they already have. Zero onboarding friction.", color: "text-[#25D366]" }
+            ].map((f, i) => (
+              <motion.div
+                key={i}
+                whileHover={{ y: -8 }}
+                className="p-10 bg-[#F8FAFC] rounded-[2.5rem] border border-transparent hover:border-slate-200 transition-all group"
+              >
+                <div className={cn("w-14 h-14 rounded-2xl bg-white shadow-sm flex items-center justify-center mb-6 px-3 group-hover:scale-110 transition-transform", f.color)}>
+                  <f.icon size={28} />
+                </div>
+                <h4 className="text-xl font-bold text-[#0A1628] mb-3">{f.title}</h4>
+                <p className="text-slate-500 text-sm font-medium leading-relaxed">{f.desc}</p>
+              </motion.div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* Benefits */}
+      <section className="py-24 px-6 overflow-hidden">
+        <div className="max-w-7xl mx-auto flex flex-col md:flex-row gap-20">
+          <div className="flex-1 sticky top-32 h-fit">
+            <h2 className="text-4xl md:text-5xl font-black text-[#0A1628] mb-8">Why 500+ CA Firms Switched to CA Flow</h2>
+            <div className="space-y-10">
+              {[
+                { icon: Clock, title: "Time Bachaye", desc: "Save 3–4 hours daily on document requests" },
+                { icon: Award, title: "Productivity Badhaye", desc: "Staff focuses on high-value CA work, not fetching files" },
+                { icon: Shield, title: "Professional Image", desc: "Branded delivery makes your firm look premium" },
+                { icon: Users, title: "Client Trust Banaye", desc: "Fast, reliable service = more referrals" }
+              ].map((b, i) => (
+                <div key={i} className="flex gap-6">
+                  <div className="w-12 h-12 rounded-2xl bg-white shadow-md border border-slate-50 flex items-center justify-center shrink-0 text-[#16A34A]">
+                    <b.icon size={24} />
+                  </div>
+                  <div>
+                    <h4 className="text-lg font-black text-slate-800">{b.title}</h4>
+                    <p className="text-slate-500 font-medium">{b.desc}</p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+          <div className="flex-1 space-y-8">
+            {[
+              { val: "3–4 hrs", label: "saved per day", color: "bg-blue-600" },
+              { val: "90%", label: "reduction in calls", color: "bg-emerald-600" },
+              { val: "10 sec", label: "avg delivery time", color: "bg-[#0A1628]" },
+              { val: "98%", label: "client satisfaction", color: "bg-[#16A34A]" }
+            ].map((stat, i) => (
+              <motion.div
+                key={i}
+                whileInView={{ scale: [0.9, 1], opacity: [0, 1] }}
+                className={cn("p-12 rounded-[3rem] text-white", stat.color)}
+              >
+                <p className="text-5xl md:text-7xl font-black mb-2">{stat.val}</p>
+                <p className="text-lg font-bold opacity-75 uppercase tracking-widest">{stat.label}</p>
+              </motion.div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* Testimonials */}
+      <section id="testimonials" className="py-24 bg-white px-6">
+        <div className="max-w-7xl mx-auto">
+          <h2 className="text-4xl md:text-5xl font-black text-[#0A1628] mb-16 text-center">CA Firms Love CA Flow</h2>
+          <div className="grid md:grid-cols-3 gap-8">
+            {[
+              { q: "Clients used to call 5–6 times a week for documents. Now they WhatsApp CA Flow and get it in seconds. Best investment for our firm.", name: "Rajesh Mehta", firm: "Mehta & Associates", city: "Ahmedabad" },
+              { q: "Professional image badh gayi hai. Clients impressed hote hain jab itna fast documents milte hain.", name: "Priya Sharma", firm: "Sharma Tax Consultants", city: "Surat" },
+              { q: "Setup liya 10 minutes mein, aur next day se clients khud documents le rahe the. No training needed.", name: "Amit Patel", firm: "Patel CA Firm", city: "Mumbai" }
+            ].map((t, i) => (
+              <div key={i} className="p-10 bg-[#F8FAFC] rounded-[3rem] shadow-sm flex flex-col justify-between">
+                <div>
+                  <div className="flex text-amber-400 mb-6 font-black tracking-tight uppercase">
+                    {[...Array(5)].map((_, i) => <Star key={i} size={18} fill="currentColor" />)}
+                  </div>
+                  <p className="text-lg font-medium text-slate-800 italic mb-10 leading-relaxed">"{t.q}"</p>
+                </div>
+                <div className="flex items-center gap-4">
+                  <div className="w-12 h-12 bg-[#0A1628] text-white rounded-full flex items-center justify-center font-bold">{t.name[0]}</div>
+                  <div>
+                    <p className="font-black text-slate-900">{t.name}</p>
+                    <p className="text-xs font-bold text-slate-400 uppercase tracking-widest">{t.firm}, {t.city}</p>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      <PricingSection />
+
+      <FAQSection />
+
+      {/* Final CTA */}
+      <section className="py-24 px-6 md:px-12">
+        <div className="max-w-7xl mx-auto bg-[#0A1628] rounded-[4rem] p-12 md:p-24 text-center relative overflow-hidden shadow-2xl">
+          <div className="absolute inset-0 opacity-10 pointer-events-none" style={{ backgroundImage: 'radial-gradient(#16A34A 1px, transparent 1px)', backgroundSize: '30px 30px' }} />
+          <div className="relative z-10">
+            <h2 className="text-4xl md:text-7xl font-black text-white mb-6">Smart CA Firms ki Pehchaan,<br /><span className="text-[#16A34A]">Automation</span> ke saath!</h2>
+            <p className="text-xl text-white/60 font-medium mb-12 max-w-2xl mx-auto">Join 500+ CA firms delivering documents the modern way.</p>
+            <div className="flex flex-col sm:flex-row gap-6 justify-center">
+              <Link href="/login" className="bg-[#16A34A] hover:bg-[#15803d] text-white px-10 py-5 rounded-2xl font-black text-lg transition-all shadow-xl shadow-green-900/20">
+                Start Free Trial — No Card Needed
+              </Link>
+              <button className="bg-transparent border-2 border-white/20 hover:border-white text-white px-10 py-5 rounded-2xl font-black text-lg transition-all flex items-center justify-center gap-2">
+                <MessageSquare size={22} fill="currentColor" /> Talk to Us on WhatsApp
+              </button>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Footer */}
+      <footer className="bg-white pt-24 pb-12 px-6">
+        <div className="max-w-7xl mx-auto">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-12 mb-20">
+            <div className="col-span-2 md:col-span-1">
+              <Logo className="mb-6" />
+              <p className="text-slate-500 font-medium text-sm leading-relaxed mb-6">Documents. Automation. Flow.<br />Making accounting digital first.</p>
+              <div className="flex gap-4">
+                {[Globe, MessageSquare, Shield].map((Icon, i) => (
+                  <div key={i} className="w-10 h-10 rounded-full bg-slate-50 flex items-center justify-center text-slate-400 hover:text-[#16A34A] hover:bg-green-50 transition-all cursor-pointer">
+                    <Icon size={18} />
+                  </div>
+                ))}
+              </div>
+            </div>
+            <div>
+              <h5 className="font-black text-[#0A1628] mb-6 uppercase tracking-widest text-[10px]">Product</h5>
+              <ul className="space-y-4 text-sm font-bold text-slate-400">
+                <li className="hover:text-slate-900 cursor-pointer">Features</li>
+                <li className="hover:text-slate-900 cursor-pointer">Pricing</li>
+                <li className="hover:text-slate-900 cursor-pointer">Demo</li>
+                <li className="hover:text-slate-900 cursor-pointer">Changelog</li>
+              </ul>
+            </div>
+            <div>
+              <h5 className="font-black text-[#0A1628] mb-6 uppercase tracking-widest text-[10px]">Company</h5>
+              <ul className="space-y-4 text-sm font-bold text-slate-400">
+                <li className="hover:text-slate-900 cursor-pointer">About</li>
+                <li className="hover:text-slate-900 cursor-pointer">Blog</li>
+                <li className="hover:text-slate-900 cursor-pointer">Careers</li>
+                <li className="hover:text-slate-900 cursor-pointer">Contact</li>
+              </ul>
+            </div>
+            <div>
+              <h5 className="font-black text-[#0A1628] mb-6 uppercase tracking-widest text-[10px]">Legal</h5>
+              <ul className="space-y-4 text-sm font-bold text-slate-400">
+                <li className="hover:text-slate-900 cursor-pointer">Privacy Policy</li>
+                <li className="hover:text-slate-900 cursor-pointer">Terms of Service</li>
+                <li className="hover:text-slate-900 cursor-pointer">Refund Policy</li>
+              </ul>
+            </div>
+          </div>
+          <div className="pt-8 border-t border-slate-100 flex flex-col md:flex-row justify-between items-center gap-6">
+            <p className="text-slate-400 font-bold text-xs uppercase tracking-widest">© 2024 CA Flow. Made with ❤️ for CA Firms in India</p>
+            <div className="flex gap-6 text-[10px] font-black uppercase tracking-widest text-slate-300">
+              <span>GST Compliant</span>
+              <span>ISO Certified</span>
+            </div>
+          </div>
+        </div>
+      </footer>
+
+      {/* Styles for scrollbar */}
+      <style jsx global>{`
+        .custom-scrollbar::-webkit-scrollbar { width: 4px; }
+        .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: rgba(0,0,0,0.1); border-radius: 10px; }
+        .custom-scrollbar-thin::-webkit-scrollbar { width: 2px; }
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+        .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+      `}</style>
     </div>
   );
 }

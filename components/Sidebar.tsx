@@ -9,9 +9,8 @@ import { useAuth } from '@/lib/auth';
 import { useRouter } from 'next/navigation';
 
 const navItems = [
-  { icon: LayoutDashboard, label: 'Dashboard', href: '/' },
+  { icon: LayoutDashboard, label: 'Dashboard', href: '/dashboard' },
   { icon: Users, label: 'Clients', href: '/clients' },
-  // { icon: HelpCircle, label: 'Help Center', href: '/help' },
 ];
 
 const adminNavItems = [
@@ -57,9 +56,7 @@ export function Sidebar() {
             <span className="text-[11px] font-bold text-slate-400 uppercase tracking-widest">Main Menu</span>
           </div>
           {navItems.map((item) => {
-            const isActive = item.href === '/'
-              ? pathname === '/'
-              : pathname === item.href || pathname.startsWith(item.href + '/');
+            const isActive = pathname === item.href || pathname.startsWith(item.href + '/');
             return (
               <Link
                 key={item.href}
