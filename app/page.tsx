@@ -67,7 +67,7 @@ const Navbar = () => {
             Login
           </Link>
           <Link href="/login" className="bg-[#2563EB] hover:bg-[#1D4ED8] text-white px-6 py-2.5 rounded-full font-bold text-sm shadow-lg shadow-blue-100 transition-all flex items-center gap-2 group">
-            Get Started Free
+            Get Started
             <ArrowRight size={16} className="group-hover:translate-x-1 transition-transform" />
           </Link>
         </div>
@@ -95,7 +95,7 @@ const Navbar = () => {
               ))}
               <div className="pt-4 flex flex-col gap-3">
                 <Link href="/login" className="w-full text-center py-3 font-bold text-[#0A1628]">Login</Link>
-                <Link href="/login" className="w-full text-center py-4 bg-[#2563EB] text-white rounded-2xl font-bold">Get Started Free</Link>
+                <Link href="/login" className="w-full text-center py-4 bg-[#2563EB] text-white rounded-2xl font-bold">Get Started</Link>
               </div>
             </div>
           </motion.div>
@@ -550,74 +550,50 @@ const PricingSection = () => {
       <div className="max-w-7xl mx-auto px-6">
         <div className="text-center mb-16">
           <h2 className="text-4xl md:text-5xl font-black text-[#0A1628] mb-6">Simple, Transparent Pricing</h2>
-
-          <div className="flex items-center justify-center gap-4">
-            <span className={cn("text-sm font-bold", !isYearly ? "text-[#0A1628]" : "text-slate-400")}>Monthly</span>
-            <button
-              onClick={() => setIsYearly(!isYearly)}
-              className="w-14 h-7 bg-slate-100 rounded-full relative transition-colors p-1"
-            >
-              <motion.div
-                animate={{ x: isYearly ? 28 : 0 }}
-                className="w-5 h-5 bg-[#2563EB] rounded-full shadow-sm"
-              />
-            </button>
-            <span className={cn("text-sm font-bold flex items-center gap-2", isYearly ? "text-[#0A1628]" : "text-slate-400")}>
-              Yearly <span className="text-[10px] bg-blue-50 text-blue-600 px-2 py-0.5 rounded-full border border-blue-100">20% OFF</span>
-            </span>
-          </div>
+          <p className="text-slate-500 font-medium text-lg">One plan for everything you need to scale your CA firm.</p>
         </div>
 
-        <div className="grid md:grid-cols-3 gap-8 items-end">
-          {plans.map((plan, i) => (
-            <div
-              key={plan.name}
-              className={cn(
-                "p-10 rounded-[2.5rem] border transition-all duration-500",
-                plan.popular
-                  ? "bg-[#0A1628] border-[#0A1628] shadow-2xl scale-105 relative z-10 text-white"
-                  : "bg-white border-slate-100 hover:border-slate-300 text-slate-800"
-              )}
-            >
-              {plan.popular && (
-                <div className="absolute -top-4 left-1/2 -translate-x-1/2 bg-[#2563EB] text-white text-[10px] font-black uppercase tracking-widest px-4 py-1.5 rounded-full">
-                  Most Popular
-                </div>
-              )}
-              <h3 className="text-xl font-bold mb-2 uppercase tracking-widest text-[#2563EB]">{plan.name}</h3>
-              <div className="flex items-baseline gap-1 mb-8">
-                <span className="text-4xl md:text-5xl font-black">{plan.price === 'Custom' ? '' : '₹'}{plan.price}</span>
-                {plan.price !== 'Custom' && <span className="text-sm font-medium opacity-60">/mo</span>}
-              </div>
-              <div className="space-y-4 mb-10">
-                {plan.features.map(f => (
-                  <div key={f} className="flex items-center gap-3">
-                    <div className={cn("w-5 h-5 rounded-full flex items-center justify-center shrink-0", plan.popular ? "bg-[#2563EB]/20" : "bg-blue-50")}>
-                      <Check size={12} className="text-[#2563EB]" />
-                    </div>
-                    <span className="text-sm font-semibold opacity-90">{f}</span>
-                  </div>
-                ))}
-                {!plan.name.includes('Starter') && plan.name.includes('Starter') && (
-                  <div className="flex items-center gap-3 opacity-30">
-                    <X size={16} />
-                    <span className="text-sm font-semibold">Audit Trail</span>
-                  </div>
-                )}
-              </div>
-              <Link
-                href="/login"
-                className={cn(
-                  "block w-full text-center py-4 rounded-2xl font-black text-sm transition-all",
-                  plan.popular
-                    ? "bg-[#2563EB] text-white hover:bg-[#1D4ED8]"
-                    : "bg-slate-50 text-slate-800 hover:bg-slate-100 border border-slate-100"
-                )}
-              >
-                {plan.cta}
-              </Link>
+        <div className="max-w-xl mx-auto">
+          <div className="p-10 rounded-[2.5rem] border bg-[#0A1628] border-[#0A1628] shadow-2xl relative z-10 text-white">
+            <div className="absolute -top-4 left-1/2 -translate-x-1/2 bg-[#2563EB] text-white text-[10px] font-black uppercase tracking-widest px-4 py-1.5 rounded-full">
+              Full Access Plan
             </div>
-          ))}
+            <h3 className="text-xl font-bold mb-6 uppercase tracking-widest text-[#2563EB]">All-In-One CRM</h3>
+
+            <div className="space-y-6 mb-10 pb-10 border-b border-white/10">
+              <div className="flex justify-between items-center">
+                <span className="text-white/70 font-semibold">CA Flow CRM (Annual)</span>
+                <span className="text-2xl font-black">₹9,999</span>
+              </div>
+              <div className="flex justify-between items-center">
+                <span className="text-white/70 font-semibold">WhatsApp API & Platform</span>
+                <span className="text-2xl font-black">₹14,999</span>
+              </div>
+            </div>
+
+            <div className="flex items-baseline gap-2 mb-8 justify-center">
+              <span className="text-5xl font-black text-white">₹24,998</span>
+              <span className="text-sm font-medium text-white/50">/year</span>
+            </div>
+
+            <div className="space-y-4 mb-10">
+              {["Unlimited Clients", "WhatsApp Automation", "Full Audit Trail", "Custom Branding", "Priority Support"].map(f => (
+                <div key={f} className="flex items-center gap-3">
+                  <div className="w-5 h-5 rounded-full flex items-center justify-center shrink-0 bg-[#2563EB]/20">
+                    <Check size={12} className="text-[#2563EB]" />
+                  </div>
+                  <span className="text-sm font-semibold opacity-90">{f}</span>
+                </div>
+              ))}
+            </div>
+
+            <Link
+              href="/login"
+              className="block w-full text-center py-4 rounded-2xl font-black text-sm transition-all bg-[#2563EB] text-white hover:bg-[#1D4ED8]"
+            >
+              Get Started Now
+            </Link>
+          </div>
         </div>
       </div>
     </div>
@@ -631,7 +607,6 @@ const FAQSection = () => {
     { q: "How are documents stored securely?", a: "We use bank-grade 256-bit AES encryption. Documents are stored in a secure cloud vault, and only verified clients can access their own data." },
     { q: "Can I use my existing WhatsApp number?", a: "Yes, we can help you onboard your existing official number to the WhatsApp Business API for CA Flow." },
     { q: "What document formats are supported?", a: "PDF, JPG, PNG, Excel, and more. Most common requested files like ITR, Balance Sheets, and GST reports are typically shared as PDFs." },
-    { q: "Is there a free trial?", a: "Absolutely! Get 14 days of free access with all Pro features to see how your clients love it." },
     { q: "How long does setup take?", a: "Our team handles the setup. It usually takes under 10 minutes to upload your first set of client documents and go live." }
   ];
 
@@ -729,7 +704,7 @@ export default function LandingPage() {
 
             <div className="flex flex-col sm:flex-row gap-4">
               <Link href="/login" className="bg-[#2563EB] hover:bg-[#1D4ED8] text-white px-10 py-5 rounded-2xl font-black text-lg shadow-xl shadow-blue-200 transition-all flex items-center justify-center gap-3">
-                Start Free Trial <ArrowRight size={22} />
+                Get Started Now <ArrowRight size={22} />
               </Link>
               <button className="bg-white border border-slate-200 text-[#0A1628] px-10 py-5 rounded-2xl font-black text-lg hover:bg-slate-50 transition-all flex items-center justify-center gap-3 group">
                 <div className="w-8 h-8 rounded-full bg-[#0A1628]/5 flex items-center justify-center group-hover:bg-[#0A1628] group-hover:text-white transition-all"><Play size={14} fill="currentColor" /></div>
@@ -737,7 +712,7 @@ export default function LandingPage() {
               </button>
             </div>
             <p className="mt-6 text-sm font-bold text-slate-400 flex items-center gap-2">
-              <CheckCircle2 size={16} className="text-[#2563EB]" /> No credit card required · Setup in 10 minutes
+              <CheckCircle2 size={16} className="text-[#2563EB]" /> Professional Setup · 24x7 Support
             </p>
           </motion.div>
 
@@ -939,7 +914,7 @@ export default function LandingPage() {
             <p className="text-xl text-white/60 font-medium mb-12 max-w-2xl mx-auto">Join 500+ CA firms delivering documents the modern way.</p>
             <div className="flex flex-col sm:flex-row gap-6 justify-center">
               <Link href="/login" className="bg-[#2563EB] hover:bg-[#1D4ED8] text-white px-10 py-5 rounded-2xl font-black text-lg transition-all shadow-xl shadow-blue-900/20">
-                Start Free Trial — No Card Needed
+                Get Started Now
               </Link>
               <button className="bg-transparent border-2 border-white/20 hover:border-white text-white px-10 py-5 rounded-2xl font-black text-lg transition-all flex items-center justify-center gap-2">
                 <MessageSquare size={22} fill="currentColor" /> Talk to Us on WhatsApp
