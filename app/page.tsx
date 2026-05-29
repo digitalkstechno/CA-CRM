@@ -13,25 +13,14 @@ import {
 import Link from 'next/link';
 import { cn } from '@/lib/utils';
 import { Inter } from 'next/font/google';
+import { BrandLogo } from '@/components/BrandLogo';
 
 const inter = Inter({ subsets: ['latin'] });
 
 // --- Components ---
 
 const Logo = ({ className }: { className?: string }) => (
-  <div className={cn("flex items-center gap-2", className)}>
-    <div className="relative">
-      <div className="w-10 h-10 bg-[#0A1628] rounded-full flex items-center justify-center font-bold text-white text-sm">
-        CA
-      </div>
-      <div className="absolute -bottom-1 -right-1 w-5 h-5 bg-[#25D366] rounded-full flex items-center justify-center border-2 border-white">
-        <svg viewBox="0 0 24 24" className="w-3 h-3 fill-white">
-          <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-4.821 4.766c-1.21 0-2.397-.325-3.433-.94l-.246-.146-2.552.67.682-2.488-.16-.255a8.12 8.12 0 01-1.248-4.322c0-4.486 3.652-8.138 8.139-8.138 2.173 0 4.218.847 5.753 2.384 1.536 1.536 2.383 3.58 2.383 5.754 0 4.488-3.651 8.14-8.139 8.14m0-17.616c-5.232 0-9.488 4.256-9.488 9.489 0 1.673.437 3.306 1.267 4.745L3.182 20.47l4.026-1.056c1.393.759 2.96 1.159 4.561 1.159 5.234 0 9.49-4.256 9.49-9.489 0-2.527-.984-4.903-2.771-6.69s-4.163-2.771-6.691-2.771" />
-        </svg>
-      </div>
-    </div>
-    <span className="text-xl font-bold text-[#0A1628] tracking-tight">CA Flow</span>
-  </div>
+  <BrandLogo className={className} size="md" />
 );
 
 const Navbar = () => {
@@ -77,7 +66,7 @@ const Navbar = () => {
           <Link href="/login" className="text-sm font-bold text-[#0A1628] px-4 py-2 hover:bg-slate-100 rounded-full transition-all">
             Login
           </Link>
-          <Link href="/login" className="bg-[#16A34A] hover:bg-[#15803d] text-white px-6 py-2.5 rounded-full font-bold text-sm shadow-lg shadow-green-100 transition-all flex items-center gap-2 group">
+          <Link href="/login" className="bg-[#2563EB] hover:bg-[#1D4ED8] text-white px-6 py-2.5 rounded-full font-bold text-sm shadow-lg shadow-blue-100 transition-all flex items-center gap-2 group">
             Get Started Free
             <ArrowRight size={16} className="group-hover:translate-x-1 transition-transform" />
           </Link>
@@ -106,7 +95,7 @@ const Navbar = () => {
               ))}
               <div className="pt-4 flex flex-col gap-3">
                 <Link href="/login" className="w-full text-center py-3 font-bold text-[#0A1628]">Login</Link>
-                <Link href="/login" className="w-full text-center py-4 bg-[#16A34A] text-white rounded-2xl font-bold">Get Started Free</Link>
+                <Link href="/login" className="w-full text-center py-4 bg-[#2563EB] text-white rounded-2xl font-bold">Get Started Free</Link>
               </div>
             </div>
           </motion.div>
@@ -192,7 +181,7 @@ const WhatsAppDemoPhone = () => {
         {/* Screen */}
         <div className="bg-[#ECE5DD] h-[520px] rounded-[2.2rem] flex flex-col overflow-hidden relative">
           {/* Header */}
-          <div className="bg-[#075E54] p-4 flex items-center gap-3">
+          <div className="bg-[#2563EB] p-4 flex items-center gap-3">
             <div className="w-10 h-10 rounded-full bg-slate-200 flex-shrink-0">
               <div className="w-full h-full bg-[#0A1628] rounded-full flex items-center justify-center font-bold text-white text-[10px]">CA</div>
             </div>
@@ -227,7 +216,7 @@ const WhatsAppDemoPhone = () => {
                         </div>
                         <div className="flex items-center justify-between">
                           <span className="text-[8px] text-slate-400">{doc.size}</span>
-                          <div className="text-[#16A34A]"><Download size={10} /></div>
+                          <div className="text-[#2563EB]"><Download size={10} /></div>
                         </div>
                       </div>
                     ))}
@@ -255,7 +244,7 @@ const WhatsAppDemoPhone = () => {
             <div className="bg-slate-100 rounded-full h-8 flex-1 flex items-center px-3">
               <span className="text-[10px] text-slate-400">Type a message...</span>
             </div>
-            <div className="w-8 h-8 rounded-full bg-[#16A34A] flex items-center justify-center text-white">
+            <div className="w-8 h-8 rounded-full bg-[#2563EB] flex items-center justify-center text-white">
               <Send size={14} fill="currentColor" />
             </div>
           </div>
@@ -321,7 +310,7 @@ const StepsSection = () => {
               initial={{ width: 0 }}
               whileInView={{ width: '100%' }}
               transition={{ duration: 2 }}
-              className="h-full bg-[#16A34A]/20"
+              className="h-full bg-[#2563EB]/20"
             />
           </div>
 
@@ -414,11 +403,11 @@ const WhatsAppSimulator = () => {
         </div>
 
         <div className="max-w-[480px] mx-auto">
-          <div className="bg-[#0A1628] rounded-[3rem] p-4 shadow-2xl border-4 border-[#16A34A]/30 relative">
+          <div className="bg-[#0A1628] rounded-[3rem] p-4 shadow-2xl border-4 border-[#2563EB]/30 relative">
             {/* WhatsApp Interface */}
             <div className="bg-[#ECE5DD] h-[580px] rounded-[2rem] overflow-hidden flex flex-col">
               {/* Header */}
-              <div className="bg-[#075E54] p-4 flex items-center justify-between">
+              <div className="bg-[#2563EB] p-4 flex items-center justify-between">
                 <div className="flex items-center gap-3">
                   <div className="w-10 h-10 rounded-full bg-slate-200 overflow-hidden flex items-center justify-center font-bold text-[#0A1628]">CA</div>
                   <div className="text-white">
@@ -450,7 +439,7 @@ const WhatsAppSimulator = () => {
                               <p className="text-xs font-bold text-slate-800 truncate">{doc.name}</p>
                               <p className="text-[10px] text-slate-400">{doc.size}</p>
                             </div>
-                            <button className="p-2 text-[#16A34A] hover:bg-green-50 rounded-full"><Download size={18} /></button>
+                            <button className="p-2 text-[#2563EB] hover:bg-blue-50 rounded-full"><Download size={18} /></button>
                           </div>
                         ))}
                       </div>
@@ -483,7 +472,7 @@ const WhatsAppSimulator = () => {
                     <button
                       key={chip}
                       onClick={() => handleSend(chip)}
-                      className="whitespace-nowrap bg-slate-50 border border-slate-100 px-4 py-2 rounded-full text-xs font-bold text-slate-600 hover:bg-[#16A34A]/10 hover:border-[#16A34A]/30 transition-all"
+                      className="whitespace-nowrap bg-slate-50 border border-slate-100 px-4 py-2 rounded-full text-xs font-bold text-slate-600 hover:bg-[#2563EB]/10 hover:border-[#2563EB]/30 transition-all"
                     >
                       {chip}
                     </button>
@@ -506,7 +495,7 @@ const WhatsAppSimulator = () => {
                       <Smile size={18} />
                     </div>
                   </div>
-                  <button className="w-12 h-12 bg-[#16A34A] rounded-full flex items-center justify-center text-white shadow-lg shadow-green-100">
+                  <button className="w-12 h-12 bg-[#2563EB] rounded-full flex items-center justify-center text-white shadow-lg shadow-blue-100">
                     <Send size={20} fill="currentColor" />
                   </button>
                 </div>
@@ -570,11 +559,11 @@ const PricingSection = () => {
             >
               <motion.div
                 animate={{ x: isYearly ? 28 : 0 }}
-                className="w-5 h-5 bg-[#16A34A] rounded-full shadow-sm"
+                className="w-5 h-5 bg-[#2563EB] rounded-full shadow-sm"
               />
             </button>
             <span className={cn("text-sm font-bold flex items-center gap-2", isYearly ? "text-[#0A1628]" : "text-slate-400")}>
-              Yearly <span className="text-[10px] bg-emerald-50 text-emerald-600 px-2 py-0.5 rounded-full border border-emerald-100">20% OFF</span>
+              Yearly <span className="text-[10px] bg-blue-50 text-blue-600 px-2 py-0.5 rounded-full border border-blue-100">20% OFF</span>
             </span>
           </div>
         </div>
@@ -591,11 +580,11 @@ const PricingSection = () => {
               )}
             >
               {plan.popular && (
-                <div className="absolute -top-4 left-1/2 -translate-x-1/2 bg-[#16A34A] text-white text-[10px] font-black uppercase tracking-widest px-4 py-1.5 rounded-full">
+                <div className="absolute -top-4 left-1/2 -translate-x-1/2 bg-[#2563EB] text-white text-[10px] font-black uppercase tracking-widest px-4 py-1.5 rounded-full">
                   Most Popular
                 </div>
               )}
-              <h3 className="text-xl font-bold mb-2 uppercase tracking-widest text-[#16A34A]">{plan.name}</h3>
+              <h3 className="text-xl font-bold mb-2 uppercase tracking-widest text-[#2563EB]">{plan.name}</h3>
               <div className="flex items-baseline gap-1 mb-8">
                 <span className="text-4xl md:text-5xl font-black">{plan.price === 'Custom' ? '' : '₹'}{plan.price}</span>
                 {plan.price !== 'Custom' && <span className="text-sm font-medium opacity-60">/mo</span>}
@@ -603,8 +592,8 @@ const PricingSection = () => {
               <div className="space-y-4 mb-10">
                 {plan.features.map(f => (
                   <div key={f} className="flex items-center gap-3">
-                    <div className={cn("w-5 h-5 rounded-full flex items-center justify-center shrink-0", plan.popular ? "bg-[#16A34A]/20" : "bg-green-50")}>
-                      <Check size={12} className="text-[#16A34A]" />
+                    <div className={cn("w-5 h-5 rounded-full flex items-center justify-center shrink-0", plan.popular ? "bg-[#2563EB]/20" : "bg-blue-50")}>
+                      <Check size={12} className="text-[#2563EB]" />
                     </div>
                     <span className="text-sm font-semibold opacity-90">{f}</span>
                   </div>
@@ -621,7 +610,7 @@ const PricingSection = () => {
                 className={cn(
                   "block w-full text-center py-4 rounded-2xl font-black text-sm transition-all",
                   plan.popular
-                    ? "bg-[#16A34A] text-white hover:bg-[#15803d]"
+                    ? "bg-[#2563EB] text-white hover:bg-[#1D4ED8]"
                     : "bg-slate-50 text-slate-800 hover:bg-slate-100 border border-slate-100"
                 )}
               >
@@ -657,8 +646,8 @@ const FAQSection = () => {
                 onClick={() => setOpenIdx(openIdx === i ? null : i)}
                 className="w-full p-6 text-left flex items-center justify-between group"
               >
-                <span className={cn("font-bold transition-colors", openIdx === i ? "text-[#16A34A]" : "text-[#0A1628]")}>{faq.q}</span>
-                <div className={cn("transition-transform duration-300", openIdx === i ? "rotate-180 text-[#16A34A]" : "text-slate-400 group-hover:text-slate-900")}>
+                <span className={cn("font-bold transition-colors", openIdx === i ? "text-[#2563EB]" : "text-[#0A1628]")}>{faq.q}</span>
+                <div className={cn("transition-transform duration-300", openIdx === i ? "rotate-180 text-[#2563EB]" : "text-slate-400 group-hover:text-slate-900")}>
                   <ChevronDown size={20} />
                 </div>
               </button>
@@ -713,7 +702,7 @@ export default function LandingPage() {
 
             <h1 className="text-5xl md:text-7xl font-black text-[#0A1628] leading-[1] tracking-tighter mb-8">
               "Aapka Client, <br />
-              <span className="text-[#16A34A]">Apne Documents</span>, <br />
+              <span className="text-[#2563EB]">Apne Documents</span>, <br />
               Jab Chahe, Jahan Chahe!"
             </h1>
 
@@ -739,7 +728,7 @@ export default function LandingPage() {
             </div>
 
             <div className="flex flex-col sm:flex-row gap-4">
-              <Link href="/login" className="bg-[#16A34A] hover:bg-[#15803d] text-white px-10 py-5 rounded-2xl font-black text-lg shadow-xl shadow-green-200 transition-all flex items-center justify-center gap-3">
+              <Link href="/login" className="bg-[#2563EB] hover:bg-[#1D4ED8] text-white px-10 py-5 rounded-2xl font-black text-lg shadow-xl shadow-blue-200 transition-all flex items-center justify-center gap-3">
                 Start Free Trial <ArrowRight size={22} />
               </Link>
               <button className="bg-white border border-slate-200 text-[#0A1628] px-10 py-5 rounded-2xl font-black text-lg hover:bg-slate-50 transition-all flex items-center justify-center gap-3 group">
@@ -748,7 +737,7 @@ export default function LandingPage() {
               </button>
             </div>
             <p className="mt-6 text-sm font-bold text-slate-400 flex items-center gap-2">
-              <CheckCircle2 size={16} className="text-[#16A34A]" /> No credit card required · Setup in 10 minutes
+              <CheckCircle2 size={16} className="text-[#2563EB]" /> No credit card required · Setup in 10 minutes
             </p>
           </motion.div>
 
@@ -799,12 +788,12 @@ export default function LandingPage() {
             {/* New Way */}
             <motion.div
               whileInView={{ x: [100, 0], opacity: [0, 1] }}
-              className="bg-[#0A1628] p-10 rounded-[3rem] border border-green-500/20 relative group hover:border-green-500/50 transition-all text-white shadow-2xl"
+              className="bg-[#0A1628] p-10 rounded-[3rem] border border-blue-500/20 relative group hover:border-blue-500/50 transition-all text-white shadow-2xl"
             >
-              <div className="absolute top-6 right-6 text-green-500/10 group-hover:text-green-500/20 transition-colors">
+              <div className="absolute top-6 right-6 text-blue-500/10 group-hover:text-blue-500/20 transition-colors">
                 <Check size={100} strokeWidth={4} />
               </div>
-              <h3 className="text-2xl font-black mb-8 relative z-10">The New Way <br /><span className="text-[#16A34A]">With CA Flow</span></h3>
+              <h3 className="text-2xl font-black mb-8 relative z-10">The New Way <br /><span className="text-[#2563EB]">With CA Flow</span></h3>
               <div className="space-y-6 relative z-10">
                 {[
                   "Clients self-serve documents 24x7 on WhatsApp",
@@ -814,8 +803,8 @@ export default function LandingPage() {
                   "Clients trust your firm more, refer others"
                 ].map((item, i) => (
                   <div key={i} className="flex gap-4">
-                    <div className="w-6 h-6 rounded-full bg-green-500/20 flex items-center justify-center shrink-0">
-                      <Check size={14} className="text-[#16A34A]" />
+                    <div className="w-6 h-6 rounded-full bg-blue-500/20 flex items-center justify-center shrink-0">
+                      <Check size={14} className="text-[#2563EB]" />
                     </div>
                     <span className="text-slate-300 font-bold">{item}</span>
                   </div>
@@ -876,7 +865,7 @@ export default function LandingPage() {
                 { icon: Users, title: "Client Trust Banaye", desc: "Fast, reliable service = more referrals" }
               ].map((b, i) => (
                 <div key={i} className="flex gap-6">
-                  <div className="w-12 h-12 rounded-2xl bg-white shadow-md border border-slate-50 flex items-center justify-center shrink-0 text-[#16A34A]">
+                  <div className="w-12 h-12 rounded-2xl bg-white shadow-md border border-slate-50 flex items-center justify-center shrink-0 text-[#2563EB]">
                     <b.icon size={24} />
                   </div>
                   <div>
@@ -892,7 +881,7 @@ export default function LandingPage() {
               { val: "3–4 hrs", label: "saved per day", color: "bg-blue-600" },
               { val: "90%", label: "reduction in calls", color: "bg-emerald-600" },
               { val: "10 sec", label: "avg delivery time", color: "bg-[#0A1628]" },
-              { val: "98%", label: "client satisfaction", color: "bg-[#16A34A]" }
+              { val: "98%", label: "client satisfaction", color: "bg-[#2563EB]" }
             ].map((stat, i) => (
               <motion.div
                 key={i}
@@ -944,12 +933,12 @@ export default function LandingPage() {
       {/* Final CTA */}
       <section className="py-24 px-6 md:px-12">
         <div className="max-w-7xl mx-auto bg-[#0A1628] rounded-[4rem] p-12 md:p-24 text-center relative overflow-hidden shadow-2xl">
-          <div className="absolute inset-0 opacity-10 pointer-events-none" style={{ backgroundImage: 'radial-gradient(#16A34A 1px, transparent 1px)', backgroundSize: '30px 30px' }} />
+          <div className="absolute inset-0 opacity-10 pointer-events-none" style={{ backgroundImage: 'radial-gradient(#2563EB 1px, transparent 1px)', backgroundSize: '30px 30px' }} />
           <div className="relative z-10">
-            <h2 className="text-4xl md:text-7xl font-black text-white mb-6">Smart CA Firms ki Pehchaan,<br /><span className="text-[#16A34A]">Automation</span> ke saath!</h2>
+            <h2 className="text-4xl md:text-7xl font-black text-white mb-6">Smart CA Firms ki Pehchaan,<br /><span className="text-[#2563EB]">Automation</span> ke saath!</h2>
             <p className="text-xl text-white/60 font-medium mb-12 max-w-2xl mx-auto">Join 500+ CA firms delivering documents the modern way.</p>
             <div className="flex flex-col sm:flex-row gap-6 justify-center">
-              <Link href="/login" className="bg-[#16A34A] hover:bg-[#15803d] text-white px-10 py-5 rounded-2xl font-black text-lg transition-all shadow-xl shadow-green-900/20">
+              <Link href="/login" className="bg-[#2563EB] hover:bg-[#1D4ED8] text-white px-10 py-5 rounded-2xl font-black text-lg transition-all shadow-xl shadow-blue-900/20">
                 Start Free Trial — No Card Needed
               </Link>
               <button className="bg-transparent border-2 border-white/20 hover:border-white text-white px-10 py-5 rounded-2xl font-black text-lg transition-all flex items-center justify-center gap-2">
@@ -969,7 +958,7 @@ export default function LandingPage() {
               <p className="text-slate-500 font-medium text-sm leading-relaxed mb-6">Documents. Automation. Flow.<br />Making accounting digital first.</p>
               <div className="flex gap-4">
                 {[Globe, MessageSquare, Shield].map((Icon, i) => (
-                  <div key={i} className="w-10 h-10 rounded-full bg-slate-50 flex items-center justify-center text-slate-400 hover:text-[#16A34A] hover:bg-green-50 transition-all cursor-pointer">
+                  <div key={i} className="w-10 h-10 rounded-full bg-slate-50 flex items-center justify-center text-slate-400 hover:text-[#2563EB] hover:bg-blue-50 transition-all cursor-pointer">
                     <Icon size={18} />
                   </div>
                 ))}
